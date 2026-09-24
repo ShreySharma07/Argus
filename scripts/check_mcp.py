@@ -4,7 +4,6 @@
 """
 
 import asyncio
-import json
 import sys
 
 from agent.tools.mcp_client import ALLOWED_TOOLS, TigerGraphMCP, ToolNotAllowed
@@ -33,7 +32,7 @@ async def main() -> int:
             print("OK: drop_graph blocked client-side")
 
         graphs = await tg.call("tigergraph__list_graphs")
-        print("list_graphs ->", json.dumps(graphs, indent=2) if not isinstance(graphs, str) else graphs)
+        print("list_graphs ->", graphs)
     return 0
 
 

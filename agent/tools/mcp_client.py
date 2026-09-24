@@ -13,6 +13,7 @@ further restricted to the query names in ALLOWED_QUERIES.
 import asyncio
 import json
 import os
+import re
 import shutil
 import sys
 from contextlib import AsyncExitStack
@@ -58,7 +59,7 @@ ALLOWED_TOOLS = frozenset({
 ALLOWED_QUERIES = frozenset({
     "entity_profile", "txn_neighborhood", "shared_entities", "velocity_window",
     "ring_detect", "entity_centrality", "similar_cases",
-    "upsert_case", "add_evidence", "add_action",
+    "upsert_case", "add_evidence", "add_action", "policy_search",
 })
 ALLOWED_QUERY_PREFIXES = ("pattern_",)
 
@@ -119,10 +120,17 @@ class TigerGraphMCP:
         text = "\n".join(c.text for c in result.content if getattr(c, "text", None))
         if getattr(result, "isError", False):
             raise RuntimeError(f"{tool} failed: {text}")
+        # tigergraph-mcp replies with a ```json envelope {success, data, error, ...} plus markdown.
+        m = re.search(r"```json\n(.*?)\n```", text, re.S)
         try:
-            return json.loads(text)
+            envelope = json.loads(m.group(1) if m else text)
         except (json.JSONDecodeError, TypeError):
             return text
+        if isinstance(envelope, dict) and "success" in envelope:
+            if not envelope["success"]:
+                raise RuntimeError(f"{tool} failed: {envelope.get('error') or envelope.get('summary')}")
+            return envelope.get("data")
+        return envelope
 
 
 def call_sync(tool: str, args: dict[str, Any] | None = None) -> Any:
