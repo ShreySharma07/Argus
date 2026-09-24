@@ -40,15 +40,15 @@ async def _search_graph(qv: list[float], k: int) -> list[dict]:
     async with TigerGraphMCP() as tg:
         res = await tg.call("tigergraph__run_installed_query",
                             {"query_name": "policy_search", "params": {"qv": qv, "k": k}})
-    results = res.get("data", res) if isinstance(res, dict) else res
+    results = res["result"]
     chunks, dist = results[0]["chunks"], results[1]["distances"]
     out = []
     for c in chunks:
         a = c["attributes"]
         out.append({
-            **{f: a.get(f"chunks.{f}", a.get(f)) for f in FIELDS},
-            "patterns": a.get("chunks.@patterns", []),
-            "score": 1.0 - float(dist.get(c["v_id"], 1.0)),
+            **{f: a.get(f"hits.{f}") for f in FIELDS},
+            "patterns": a.get("hits.@patterns", []),
+            "score": 1.0 - float(dist.get(c["v_id"], 1.0)),  # cosine distance -> similarity
         })
     return sorted(out, key=lambda r: -r["score"])
 

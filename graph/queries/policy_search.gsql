@@ -1,3 +1,4 @@
+USE GRAPH {GRAPH}
 CREATE OR REPLACE QUERY policy_search(LIST<FLOAT> qv, INT k = 5) FOR GRAPH {GRAPH} {
   // Top-k policy/pattern/regulation chunks by cosine distance, plus the patterns they describe.
   MapAccum<VERTEX, FLOAT> @@dist;
