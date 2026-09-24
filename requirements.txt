@@ -6,3 +6,4 @@ PyYAML>=6.0
 fastembed>=0.3
 numpy
 pypdf
+pandas
