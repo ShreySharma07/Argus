@@ -28,7 +28,8 @@ PATTERNS = {
 # Rules whose text is about one specific pattern.
 RULE_PATTERNS = {"R5": {"card_testing"}, "R9": {"undocumented"}}
 
-REG_CHUNK_CHARS = 1500
+# ~200-300 tokens: sharper matches, and well inside bge-small's 512-token window.
+REG_CHUNK_CHARS = 1100
 REG_OVERLAP = 200
 
 
@@ -100,15 +101,57 @@ def readme_chunks(md: str) -> list[dict]:
     return chunks
 
 
+def _pdf_pages(path: Path) -> list[str]:
+    """PDF text per page with running headers/footers and bare page numbers removed."""
+    from collections import Counter
+    from pypdf import PdfReader
+    pages = [(p.extract_text() or "").splitlines() for p in PdfReader(path).pages]
+    freq = Counter(l.strip() for lines in pages for l in set(lines) if l.strip())
+    repeated = {l for l, n in freq.items() if len(pages) >= 4 and n >= 0.5 * len(pages)}
+    return ["\n".join(l for l in lines if l.strip() not in repeated and not re.fullmatch(r"\s*(page\s*)?\d+\s*", l, re.I))
+            for lines in pages]
+
+
 def _read_doc(path: Path) -> str:
     if path.suffix.lower() == ".pdf":
-        from pypdf import PdfReader
-        return "\n".join(p.extract_text() or "" for p in PdfReader(path).pages)
+        return "\n".join(_pdf_pages(path))
     text = path.read_text(errors="ignore")
     if path.suffix.lower() in (".html", ".htm"):
         text = re.sub(r"(?s)<(script|style).*?</\1>", " ", text)
         text = html.unescape(re.sub(r"<[^>]+>", " ", text))
     return text
+
+
+def _sentences(text: str) -> list[str]:
+    # Join PDF line-wraps, keep blank-line paragraph breaks, then split on sentence ends.
+    paras = [re.sub(r"\s+", " ", p).strip() for p in re.split(r"\n\s*\n", text)]
+    out = []
+    for p in paras:
+        out += [s for s in re.split(r"(?<=[.!?;:])\s+(?=[A-Z0-9(\"\u2022-])", p) if s]
+    return out
+
+
+def _pack(sentences: list[str]) -> list[str]:
+    """Greedy-pack sentences into ~REG_CHUNK_CHARS chunks; carry trailing sentences as overlap."""
+    chunks, cur = [], []
+    for sent in sentences:
+        while len(sent) > REG_CHUNK_CHARS:  # pathological run-on text: hard split
+            sentences_head, sent = sent[:REG_CHUNK_CHARS], sent[REG_CHUNK_CHARS:]
+            if cur:
+                chunks.append(" ".join(cur)); cur = []
+            chunks.append(sentences_head)
+        if cur and len(" ".join(cur)) + len(sent) + 1 > REG_CHUNK_CHARS:
+            chunks.append(" ".join(cur))
+            tail = []
+            for prev in reversed(cur):
+                if len(" ".join([prev] + tail)) > REG_OVERLAP:
+                    break
+                tail.insert(0, prev)
+            cur = tail
+        cur.append(sent)
+    if cur:
+        chunks.append(" ".join(cur))
+    return [c for c in chunks if len(c) >= 200]
 
 
 def regulation_chunks(folder: Path) -> list[dict]:
@@ -118,13 +161,9 @@ def regulation_chunks(folder: Path) -> list[dict]:
     for path in sorted(folder.iterdir()):
         if path.suffix.lower() not in (".pdf", ".txt", ".md", ".html", ".htm"):
             continue
-        text = re.sub(r"\s+", " ", _read_doc(path)).strip()
-        step = REG_CHUNK_CHARS - REG_OVERLAP
-        for i, start in enumerate(range(0, max(len(text), 1), step)):
-            piece = text[start:start + REG_CHUNK_CHARS]
-            if len(piece) < 200:
-                break
-            chunks.append(_chunk(f"reg:{path.stem}:{i:03d}", path.stem, path.stem, piece, source="regulation"))
+        doc = re.sub(r"[^A-Za-z0-9_-]+", "_", path.name.split(".pdf")[0].split(".")[0]).strip("_")
+        for i, piece in enumerate(_pack(_sentences(_read_doc(path)))):
+            chunks.append(_chunk(f"reg:{doc}:{i:03d}", doc, doc, piece, source="regulation"))
     return chunks
 
 
@@ -149,12 +188,19 @@ def setup_graph(conn) -> None:
 
 
 def load_graph(conn, chunks: list[dict]) -> None:
+    # Full sync: chunk IDs change when chunking changes, so drop chunks no longer produced.
+    keep = {c["id"] for c in chunks}
+    stale = [v["v_id"] for v in conn.getVertices("PolicyChunk", select="source", limit=100000) if v["v_id"] not in keep]
+    for i in range(0, len(stale), 500):
+        conn.delVerticesById("PolicyChunk", stale[i:i + 500])
+    print(f"Removed {len(stale)} stale PolicyChunk")
     pattern_ids = set(PATTERNS.values()) | {"undocumented"}
     conn.upsertVertices("FraudPattern", [
         (p, {"name": p, "documented": p != "undocumented"}) for p in sorted(pattern_ids)])
-    conn.upsertVertices("PolicyChunk", [
-        (c["id"], {k: c[k] for k in ("source", "section", "title", "text", "rule_ids", "pattern_ids", "emb")})
-        for c in chunks])
+    rows = [(c["id"], {k: c[k] for k in ("source", "section", "title", "text", "rule_ids", "pattern_ids", "emb")})
+            for c in chunks]
+    for i in range(0, len(rows), 200):
+        conn.upsertVertices("PolicyChunk", rows[i:i + 200])
     edges = [(c["id"], p) for c in chunks for p in c["pattern_ids"]]
     conn.upsertEdges("PolicyChunk", "DESCRIBES", "FraudPattern", [(s, t, {}) for s, t in edges])
     print(f"Loaded {len(chunks)} PolicyChunk, {len(pattern_ids)} FraudPattern, {len(edges)} DESCRIBES")
