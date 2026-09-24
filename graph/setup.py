@@ -2,6 +2,7 @@
 
     python -m graph.setup            # schema + loading job
     python -m graph.setup --job-only # (re)create the loading job only
+    python -m graph.setup --agent-cases  # AgentCase write-back schema (after load_prior_cases)
     python -m graph.setup --queries  # create + install graph/queries/*.gsql
 
 The loading job is generated from the TSV headers written by etl.prepare so the
@@ -81,10 +82,14 @@ def install_queries(conn) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--job-only", action="store_true")
+    ap.add_argument("--agent-cases", action="store_true")
     ap.add_argument("--queries", action="store_true")
     args = ap.parse_args()
 
     conn = connect()
+    if args.agent_cases:
+        print(gsql_file(conn, GRAPH_DIR / "schema_cases.gsql"))
+        return
     if args.queries:
         install_queries(conn)
         return

@@ -1,6 +1,6 @@
 # Fraud Investigation Agent — TigerGraph HHGOA
 
-Hackathon build. Deadline: Sept 24, 2026, 11:59 PM IST. Team of 2.
+Hackathon build. Deadline: Sept 25, 2026, 11:59 AM IST (per the submission form). Team of 2.
 **Rule #1: all 20 benchmark answer files must exist end-to-end by hour ~20. Polish after.**
 
 > The dataset README (`$DATA_DIR/README.md`) is the spec: columns, the 20 cases, the
