@@ -11,3 +11,4 @@ rank_bm25
 anthropic>=1.8
 fastapi
 uvicorn
+google-genai

@@ -211,5 +211,6 @@ async def run_case(g: GraphTools, case: dict) -> tuple[dict, list[dict]]:
     answer["tokens"] = usage.tokens
     answer["latency_s"] = round(time.time() - t0, 1)
     await write_case(g, answer, case)
-    tl.add("write_memory", f"AgentCase {answer['case']['graph_case_id']} + edges written")
+    tl.add("write_memory", f"AgentCase {answer['case']['graph_case_id']} + edges written; "
+                           f"LLM: {', '.join(sorted(usage.models)) or 'none'}")
     return answer, tl.events + [{"rationale": a.rationale}]
