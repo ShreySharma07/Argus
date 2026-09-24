@@ -20,7 +20,12 @@ from config.settings import CASES_DIR, DATA_DIR, ROOT
 RUNS = ROOT / "runs"  # committed: the UI reads timelines from here
 
 
-WORKERS = 4
+from agent import llm
+
+# Gemini free tier is rate limited per minute: run cases one at a time (llm.py also paces calls).
+WORKERS = 1 if llm.PROVIDER == "gemini" else 4
+RETRY_PASSES = 2
+RETRY_COOLDOWN_S = 90
 
 
 async def _one(case: dict, sem: asyncio.Semaphore, failed: list) -> None:
@@ -55,6 +60,14 @@ async def main(ids: list[str]) -> int:
     failed: list[str] = []
     sem = asyncio.Semaphore(WORKERS)
     await asyncio.gather(*(_one(c, sem, failed) for c in cases))
+    for attempt in range(RETRY_PASSES):  # transient provider outages: retry failed cases after a cool-down
+        if not failed:
+            break
+        retry = [c for c in cases if c["case_id"] in failed]
+        print(f"retry pass {attempt + 1}: {[c['case_id'] for c in retry]} after {RETRY_COOLDOWN_S}s", flush=True)
+        await asyncio.sleep(RETRY_COOLDOWN_S)
+        failed = []
+        await asyncio.gather(*(_one(c, sem, failed) for c in retry))
     if failed:
         print("FAILED:", sorted(failed))
     return 1 if failed else 0
