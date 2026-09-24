@@ -1,0 +1,45 @@
+[
+  {
+    "ts": "2026-09-24T12:35:37+00:00",
+    "node": "triage",
+    "detail": "risk_score on C07987-K2, flagged txn 3503878"
+  },
+  {
+    "ts": "2026-09-24T12:35:41+00:00",
+    "node": "gather_evidence",
+    "detail": "5 graph calls; 3 txns in episode window, 8 memory cases, 1 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:35:48+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-0099', 'CC-0015', 'CC-4259', 'CC-3506', 'CC-0269']"
+  },
+  {
+    "ts": "2026-09-24T12:36:35+00:00",
+    "node": "assess",
+    "detail": "before: uncertain p=0.66 pattern=card_not_present_new_device; request=customer_validation"
+  },
+  {
+    "ts": "2026-09-24T12:36:35+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.90; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE', 'MONITOR_CARD'] -> final ['BLOCK_CARD', 'CREATE_CASE', 'FILE_REPORT', 'MONITOR_CONNECTED_CARDS']"
+  },
+  {
+    "ts": "2026-09-24T12:36:35+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE, MONITOR_CONNECTED_CARDS | awaiting approval: BLOCK_CARD(L1), FILE_REPORT(L2)"
+  },
+  {
+    "ts": "2026-09-24T12:36:50+00:00",
+    "node": "explain",
+    "detail": "SAR drafted from guidance ['reg:fincen_complete_sufficient_sar_narrative:016', 'reg:fincen_complete_sufficient_sar_narrative:006', 'reg:fincen_sar_narrative_guidance:016']"
+  },
+  {
+    "ts": "2026-09-24T12:36:51+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-019 + edges written"
+  },
+  {
+    "rationale": "The flagged item is a single $99.92 online purchase, actually below this card's $194 mean, in a region the card has used before \u2014 on its own that is weak. What lifts it is the device: 'Windows | other | chrome 61.0 | 1280x720' is new for this account, rare across the portfolio (5 cards all-time, 3 in this window), and is also used by card C06224-K2, which carries 14 confirmed fraud cases including a $23,421 account-takeover episode (CC-2800). Card C07987-K2 is also a repeat victim with three prior confirmed-fraud cases (CC-2011, CC-5026, CC-2860), and region 264 shows an elevated newcomer fraud rate (28% vs 10% base). Against that, semantic memory is full of cleared 'new phone' alerts with near-identical amounts and scores, and the card's own CC-2087 was cleared after the customer confirmed. With probability below 0.70 on a still-modest amount, R1 requires verification before any block; given the rare device is shared with a heavily fraudulent card rather than being a personal new phone, the most likely reply is a denial."
+  }
+]

@@ -1,0 +1,60 @@
+[
+  {
+    "ts": "2026-09-24T12:54:29+00:00",
+    "node": "triage",
+    "detail": "risk_score on C09933-K2, flagged txn 3514948"
+  },
+  {
+    "ts": "2026-09-24T12:54:36+00:00",
+    "node": "gather_evidence",
+    "detail": "6 graph calls; 51 txns in episode window, 77 memory cases, 5 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:54:39+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-0954', 'CC-1114', 'CC-4349', 'CC-5448', 'CC-0489']"
+  },
+  {
+    "ts": "2026-09-24T12:55:22+00:00",
+    "node": "assess",
+    "detail": "round 1: legitimate p=0.20 pattern=none signals=4 confidence=0.695 {'confidence': 0.695, 'coverage': 0.8, 'signal_agreement': 1.0, 'memory_agreement': 0.25}"
+  },
+  {
+    "ts": "2026-09-24T12:55:22+00:00",
+    "node": "request_evidence",
+    "detail": "customer_validation: Can you confirm you made an in-person purchase of $111.92 on 5 December 2016 at around 00:46 in your usual billing region (264)? Also, do you recognise two online purchases on 2 December for $25.04 and $99.94?"
+  },
+  {
+    "ts": "2026-09-24T12:55:27+00:00",
+    "node": "evidence_received",
+    "detail": "customer_validation -> confirms: The cardholder confirmed the $111.92 in-person purchase on 5 December in their home region as their own, consistent with their daily spending there, and also recognised both 2 December online purchases of $25.04 and $99.94, noting the $99.94 was made from a work computer they don't normally use."
+  },
+  {
+    "ts": "2026-09-24T12:55:54+00:00",
+    "node": "assess",
+    "detail": "round 2: legitimate p=0.07 pattern=none confidence=0.775"
+  },
+  {
+    "ts": "2026-09-24T12:55:54+00:00",
+    "node": "stop",
+    "detail": "Decisive: p=0.07 with 4 independent signals and evidence confidence 0.78 (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:55:54+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.07; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE'] -> final ['ALLOW_TRANSACTION', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:55:54+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): ALLOW_TRANSACTION, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:55:56+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-007 + edges written"
+  },
+  {
+    "rationale": "The flagged transaction 3514948 ($111.92, in-person, product W, region 264) sits squarely inside this card's baseline: 2,215 of 2,431 in-person txns, 2,220 prior txns in region 264, amount_z -0.07 (0.9x mean). The only original signal was the model score of 0.87, and half the semantically similar closed cases with scores of 0.82-0.95 were cleared. The customer_validation reply confirms the flagged purchase and also both online transactions in the window (3505936 $25.04 and 3507797 $99.94, the latter from a work computer), which removes the only mild anomaly (a 'New' device flag on 3507797). No card-testing runs, no new region, no just-under-threshold runs, and the rare shared device profiles listed for other fraud cards do not appear on this card's episode. Under policy R3 the confirmation settles the question."
+  }
+]

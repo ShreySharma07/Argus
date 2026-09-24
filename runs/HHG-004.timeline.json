@@ -1,0 +1,45 @@
+[
+  {
+    "ts": "2026-09-24T12:53:03+00:00",
+    "node": "triage",
+    "detail": "customer_report on C08106-K1, flagged txn 3583227"
+  },
+  {
+    "ts": "2026-09-24T12:53:11+00:00",
+    "node": "gather_evidence",
+    "detail": "6 graph calls; 2 txns in episode window, 47 memory cases, 14 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:53:15+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R7', 'policy:R2', 'policy:R3'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-0865', 'CC-0893', 'CC-5164', 'CC-3168', 'CC-3465']"
+  },
+  {
+    "ts": "2026-09-24T12:53:56+00:00",
+    "node": "assess",
+    "detail": "round 1: fraud p=0.82 pattern=card_not_present_new_device signals=4 confidence=0.87 {'confidence': 0.87, 'coverage': 0.8, 'signal_agreement': 1.0, 'memory_agreement': 0.833}"
+  },
+  {
+    "ts": "2026-09-24T12:53:56+00:00",
+    "node": "stop",
+    "detail": "Further evidence unlikely to change the decision; no new policy-approved request remains (p=0.82, confidence 0.87; policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:53:56+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.82; initial ['BLOCK_CARD', 'CREATE_CASE'] -> final ['BLOCK_CARD', 'CREATE_CASE']"
+  },
+  {
+    "ts": "2026-09-24T12:53:56+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE | awaiting approval: BLOCK_CARD(L1)"
+  },
+  {
+    "ts": "2026-09-24T12:53:58+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-004 + edges written"
+  },
+  {
+    "rationale": "Cardholder C08106 disputes the $128.33 online charge 3583227 (2016-12-29), which is 3.63x their 180-day mean of $35.31 (z=3.36) on a card whose history is entirely online/product C with an average basket around $35. The transaction came from a device never seen on this card ('unknown | unknown | firefox 47.0 | unknown', flagged New for the account) and a different email domain (hotmail) than the prior-day $92.86 charge (gmail), which is itself 2.63x mean and also carries a New device flag - a two-transaction burst in under 24h that matches card-not-present fraud from a new device. Memory on this exact card is split but informative: CC-3778 on C08106-K1 was a confirmed CNP fraud of the same shape (single unrecognized online purchase, inconsistent amount), while CC-0696 on the same card was cleared after the cardholder confirmed travel - so a dispute here is not automatically fraud, but the earlier confirmed compromise raises the prior. The rare-device links in the graph rest on generic strings (Windows/chrome/edge shared by dozens of cards); the flagged device profile itself appears on only 6 cards all-time and just 1 in this window, so I do not treat this as a ring case. Taken together - explicit denial, new device, 3.4-sigma amount, a second same-shape charge the day before, and a prior confirmed CNP fraud on this card - the evidence supports fraud without needing a further request."
+  }
+]

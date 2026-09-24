@@ -17,7 +17,7 @@ from agent.tools.mcp_client import TigerGraphMCP
 from agent.workflow import run_case
 from config.settings import CASES_DIR, DATA_DIR, ROOT
 
-RUNS = ROOT / "data" / "runs"
+RUNS = ROOT / "runs"  # committed: the UI reads timelines from here
 
 
 WORKERS = 4

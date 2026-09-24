@@ -1,0 +1,60 @@
+[
+  {
+    "ts": "2026-09-24T12:55:32+00:00",
+    "node": "triage",
+    "detail": "customer_report on C08299-K1, flagged txn 3581141"
+  },
+  {
+    "ts": "2026-09-24T12:55:37+00:00",
+    "node": "gather_evidence",
+    "detail": "7 graph calls; 2 txns in episode window, 7 memory cases, 3 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:55:40+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R7', 'policy:R2', 'policy:R3'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-3362', 'CC-0796', 'CC-3050', 'CC-0624', 'CC-3639']"
+  },
+  {
+    "ts": "2026-09-24T12:56:15+00:00",
+    "node": "assess",
+    "detail": "round 1: legitimate p=0.28 pattern=none signals=4 confidence=0.791 {'confidence': 0.791, 'coverage': 0.8, 'signal_agreement': 1.0, 'memory_agreement': 0.571}"
+  },
+  {
+    "ts": "2026-09-24T12:56:15+00:00",
+    "node": "request_evidence",
+    "detail": "customer_validation: Our records show three earlier charges on this card for exactly $30.02 (on the dates of transactions 3342487, 3381749 and 3545489) from the same online merchant as the $30.02 charge on 2016-12-28. Do you recognise those earlier charges, or do you have a subscription or recurring service that bills about this amount? Did anyone else with access to the account (family member, shared account) make this purchase?"
+  },
+  {
+    "ts": "2026-09-24T12:56:19+00:00",
+    "node": "evidence_received",
+    "detail": "customer_validation -> denies: The cardholder states they do not recognise the three earlier $30.02 charges either and have no subscription or recurring service billing that amount; nobody else has access to the card or account. They ask that all four charges be disputed and the card reissued."
+  },
+  {
+    "ts": "2026-09-24T12:57:02+00:00",
+    "node": "assess",
+    "detail": "round 2: fraud p=0.72 pattern=card_not_present_fraud confidence=0.829"
+  },
+  {
+    "ts": "2026-09-24T12:57:02+00:00",
+    "node": "stop",
+    "detail": "Verification settled the question: customer_validation -> denies (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:57:02+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.72; initial ['CREATE_CASE', 'VERIFY_WITH_CUSTOMER', 'WARN_CUSTOMER'] -> final ['BLOCK_CARD', 'CREATE_CASE']"
+  },
+  {
+    "ts": "2026-09-24T12:57:02+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE | awaiting approval: BLOCK_CARD(L1)"
+  },
+  {
+    "ts": "2026-09-24T12:57:04+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-009 + edges written"
+  },
+  {
+    "rationale": "The earlier legitimate call rested almost entirely on the recurring look of the $30.02 amount: three prior charges of exactly the same value (3342487, 3381749, 3545489) on a card whose spend is 87% online. The customer_validation reply removes that explanation: the cardholder denies all four $30.02 charges, states they hold no subscription or service billing that amount, and confirms nobody else has access to the card or account. The recurrence signal itself was already weak (gaps of 13 and 56 days, looks_monthly = false), so with no matching subscription the repeated identical amounts read instead as a card number being milked in small, low-scoring increments (flagged txn risk 0.28, amount 0.45x the card mean). No rare device or region link supports escalation: the flagged device string 'unknown | unknown | unknown | unknown' is a generic placeholder also present in this card's own 180d history, and region 203's newcomer fraud rate (0.14 over 7 cards) is statistically indistinguishable from the 0.10 base rate. Exposure is $120.08 across four charges, so this is a case and a block, not a regulatory filing."
+  }
+]

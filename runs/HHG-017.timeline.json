@@ -1,0 +1,40 @@
+[
+  {
+    "ts": "2026-09-24T12:34:47+00:00",
+    "node": "triage",
+    "detail": "risk_score on C04570-K1, flagged txn 3450629"
+  },
+  {
+    "ts": "2026-09-24T12:34:51+00:00",
+    "node": "gather_evidence",
+    "detail": "5 graph calls; 3 txns in episode window, 1 memory cases, 0 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:34:53+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-2537', 'CC-2533', 'CC-4046', 'CC-0657', 'CC-0439']"
+  },
+  {
+    "ts": "2026-09-24T12:35:35+00:00",
+    "node": "assess",
+    "detail": "before: legitimate p=0.25 pattern=none; request=customer_validation"
+  },
+  {
+    "ts": "2026-09-24T12:35:35+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.07; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE'] -> final ['ALLOW_TRANSACTION', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:35:35+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): ALLOW_TRANSACTION, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:35:36+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-017 + edges written"
+  },
+  {
+    "rationale": "The flagged $100.09 online purchase is below this card's 180-day mean ($360.18, z = -0.58), uses product R (55.8% of history), sits in region 204 where the card already has 5 prior transactions, and runs on a device (Windows 10 / chrome 65.0 / 1920x1080) that appears 3 times in the card's own history \u2014 so none of the usual novelty markers are present. The two companion transactions in the 70-minute window ($100.09 and $99.96) scored 0.05 and 0.10 and look like retries/repeats of the same order rather than a testing ladder; there are no sub-$5 authorizations, no escalating large purchase, and no just-under-threshold runs. The only genuinely adverse signal is the HIDDEN proxy flag on the flagged leg plus the 0.57 model score, which is a reason to look, not a verdict. There are no rare shared devices and no linked cards; the region-204 newcomer fraud rate (0.19 vs 0.10 base) does not apply because this card is not a newcomer to 204. Memory is favourable: CC-1383 on this same card cleared after the cardholder confirmed, and the semantically similar cases all cleared. Under R1 the case rests on essentially one weak signal with probability well under 0.70, so a customer check is warranted before any action."
+  }
+]

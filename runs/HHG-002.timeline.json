@@ -1,0 +1,60 @@
+[
+  {
+    "ts": "2026-09-24T12:53:03+00:00",
+    "node": "triage",
+    "detail": "risk_score on C11891-K1, flagged txn 3478782"
+  },
+  {
+    "ts": "2026-09-24T12:53:08+00:00",
+    "node": "gather_evidence",
+    "detail": "5 graph calls; 1 txns in episode window, 1 memory cases, 1 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:53:11+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-2537', 'CC-3639', 'CC-4158', 'CC-2283', 'CC-4208']"
+  },
+  {
+    "ts": "2026-09-24T12:53:46+00:00",
+    "node": "assess",
+    "detail": "round 1: uncertain p=0.45 pattern=card_not_present_fraud signals=2 confidence=0.614 {'confidence': 0.614, 'coverage': 0.66, 'signal_agreement': 0.667, 'memory_agreement': 0.5}"
+  },
+  {
+    "ts": "2026-09-24T12:53:46+00:00",
+    "node": "request_evidence",
+    "detail": "customer_validation: On 22 November 2016 an online purchase of $292.36 was authorized on your card ending K1 (transaction 3478782), billed to a hotmail.com address. Do you recognize and confirm making this purchase, and if so, from which merchant?"
+  },
+  {
+    "ts": "2026-09-24T12:53:51+00:00",
+    "node": "evidence_received",
+    "detail": "customer_validation -> denies: The cardholder does not recognize the $292.36 charge and denies making it, noting it is far larger than anything they normally spend online (their purchases are typically under $50) and that the hotmail.com address is not theirs. They requested the card be blocked and the charge reversed."
+  },
+  {
+    "ts": "2026-09-24T12:54:22+00:00",
+    "node": "assess",
+    "detail": "round 2: fraud p=0.88 pattern=card_not_present_fraud confidence=0.944"
+  },
+  {
+    "ts": "2026-09-24T12:54:22+00:00",
+    "node": "stop",
+    "detail": "Decisive: p=0.88 with 4 independent signals and evidence confidence 0.94 (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:54:22+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.88; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE'] -> final ['BLOCK_CARD', 'CREATE_CASE']"
+  },
+  {
+    "ts": "2026-09-24T12:54:22+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE | awaiting approval: BLOCK_CARD(L1)"
+  },
+  {
+    "ts": "2026-09-24T12:54:24+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-002 + edges written"
+  },
+  {
+    "rationale": "The cardholder's reply settles the open question: they deny the $292.36 online charge (txn 3478782), say it is far above their usual sub-$50 online spend, and do not recognise the hotmail.com contact address on the transaction. That aligns with the objective signals: the amount is 6.55x the 180-day mean ($44.66), above the card's all-time max ($121.32), an amount z of ~9.8, on a card whose history is 100% online/product C at small ticket sizes. Memory also records a prior confirmed CNP fraud on this exact card (CC-4160, $90.54, same customer), so the card number has been exposed before. The semantically similar cases (CC-2537, CC-3639 etc.) were all cleared only because the cardholder confirmed; here the opposite happened, so they cut the other way. The rare device profile 'Trident/7.0 | ie 11.0 for tablet' does link to heavily fraud-affected cards, but it is also 8 of this card's own 35 baseline transactions and appears on 46 cards all-time, so I treat it as a common browser string rather than proof of a shared origin."
+  }
+]

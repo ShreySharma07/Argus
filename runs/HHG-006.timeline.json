@@ -1,0 +1,50 @@
+[
+  {
+    "ts": "2026-09-24T12:54:25+00:00",
+    "node": "triage",
+    "detail": "customer_report on C07297-K1, flagged txn 3476682"
+  },
+  {
+    "ts": "2026-09-24T12:54:31+00:00",
+    "node": "gather_evidence",
+    "detail": "7 graph calls; 8 txns in episode window, 0 memory cases, 0 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:54:34+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R7', 'policy:R2', 'policy:R3'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-4027', 'CC-2537', 'CC-2937', 'CC-0877', 'CC-4437']"
+  },
+  {
+    "ts": "2026-09-24T12:55:14+00:00",
+    "node": "assess",
+    "detail": "round 1: fraud p=0.89 pattern=undocumented signals=5 confidence=0.722 {'confidence': 0.722, 'coverage': 0.68, 'signal_agreement': 1.0, 'memory_agreement': 0.5}"
+  },
+  {
+    "ts": "2026-09-24T12:55:14+00:00",
+    "node": "stop",
+    "detail": "Decisive: p=0.89 with 5 independent signals and evidence confidence 0.72 (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:55:14+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.89; initial ['BLOCK_CARD', 'CREATE_CASE', 'FILE_REPORT', 'ESCALATE_TO_ANALYST'] -> final ['BLOCK_CARD', 'CREATE_CASE', 'FILE_REPORT', 'ESCALATE_TO_ANALYST']"
+  },
+  {
+    "ts": "2026-09-24T12:55:14+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE, ESCALATE_TO_ANALYST | awaiting approval: BLOCK_CARD(L1), FILE_REPORT(L2)"
+  },
+  {
+    "ts": "2026-09-24T12:55:30+00:00",
+    "node": "explain",
+    "detail": "SAR drafted from guidance ['reg:fincen_complete_sufficient_sar_narrative:016', 'reg:fincen_complete_sufficient_sar_narrative:006', 'reg:fincen_sar_narrative_guidance:016']"
+  },
+  {
+    "ts": "2026-09-24T12:55:31+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-006 + edges written"
+  },
+  {
+    "rationale": "Customer C07297 disputes txn 3476682 ($482.12), but the graph shows it is one of four online, product-C authorizations fired within 30 minutes on 2016-11-21 (3476602 $478.95, 3476633 $456.96, 3476665 $488.04, 3476682 $482.12), every one of them sitting just below a $500 round threshold \u2014 total exposure $1,906.07. That profile is alien to the card: 194 of 199 baseline transactions are in-person and product W (online share 2.5%, product C share 1.5%), mean amount $116.73, so each of these is ~4x the mean (amount_z 2.71). All four carry device_new_flag 'New', two run behind a TRANSPARENT proxy with a yahoo.com email from region 476 while the other two come from the card's home region 264, and genuine in-person home activity continues around them (226.02 on 11-20 in region 264, 82.97 on 11-22 in region 315), which is inconsistent with a single cardholder shopping. The amount-structuring burst under a round authorization limit is not one of the five documented patterns, so it is logged as undocumented per R9. The semantically similar closed cases are all 'cardholder confirmed the purchase' clearances of single high-value charges and do not resemble a four-transaction sub-threshold burst, so they carry little weight here."
+  }
+]

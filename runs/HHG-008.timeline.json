@@ -1,0 +1,65 @@
+[
+  {
+    "ts": "2026-09-24T12:54:54+00:00",
+    "node": "triage",
+    "detail": "customer_report on C13171-K2, flagged txn 3558054"
+  },
+  {
+    "ts": "2026-09-24T12:55:07+00:00",
+    "node": "gather_evidence",
+    "detail": "6 graph calls; 19 txns in episode window, 89 memory cases, 31 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:55:13+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R7', 'policy:R2', 'policy:R3'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-4027', 'CC-3640', 'CC-0893', 'CC-0657', 'CC-4591']"
+  },
+  {
+    "ts": "2026-09-24T12:56:23+00:00",
+    "node": "assess",
+    "detail": "round 1: uncertain p=0.55 pattern=card_not_present_fraud signals=3 confidence=0.77 {'confidence': 0.77, 'coverage': 0.8, 'signal_agreement': 1.0, 'memory_agreement': 0.5}"
+  },
+  {
+    "ts": "2026-09-24T12:56:23+00:00",
+    "node": "request_evidence",
+    "detail": "customer_validation: You reported the $55.68 charge of 19 Dec 2016 (3558054). Our records show two almost identical charges minutes earlier the same evening ($55.60 and $55.69) and about a dozen charges of the same amount since July. Do you recognise this as a subscription or top-up you set up yourself, and if so, did you authorise all three charges on 19 December or only one? Please also tell us whether you made the online purchases of 18 December for $85.57 and $78.56."
+  },
+  {
+    "ts": "2026-09-24T12:56:28+00:00",
+    "node": "evidence_received",
+    "detail": "customer_validation -> denies: The cardholder states they have no subscription or top-up at that amount and did not authorise any of the three charges on 19 December ($55.60, $55.69 or $55.68), nor the repeat charges of the same amount since July. They also deny the online purchases of 18 December for $85.57 and $78.56 and ask that the card be blocked and reissued."
+  },
+  {
+    "ts": "2026-09-24T12:57:17+00:00",
+    "node": "assess",
+    "detail": "round 2: fraud p=0.82 pattern=card_not_present_fraud confidence=1.0"
+  },
+  {
+    "ts": "2026-09-24T12:57:17+00:00",
+    "node": "stop",
+    "detail": "Verification settled the question: customer_validation -> denies (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:57:17+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.82; initial ['CREATE_CASE', 'VERIFY_WITH_CUSTOMER', 'WARN_CUSTOMER'] -> final ['BLOCK_CARD', 'CREATE_CASE', 'FILE_REPORT', 'MONITOR_CONNECTED_CARDS']"
+  },
+  {
+    "ts": "2026-09-24T12:57:17+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE, MONITOR_CONNECTED_CARDS | awaiting approval: BLOCK_CARD(L1), FILE_REPORT(L2)"
+  },
+  {
+    "ts": "2026-09-24T12:57:37+00:00",
+    "node": "explain",
+    "detail": "SAR drafted from guidance ['reg:fincen_complete_sufficient_sar_narrative:016', 'reg:fincen_complete_sufficient_sar_narrative:006', 'reg:fincen_sar_narrative_guidance:016']"
+  },
+  {
+    "ts": "2026-09-24T12:57:39+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-008 + edges written"
+  },
+  {
+    "rationale": "The cardholder's validation reply explicitly denies all three near-identical charges on 19 December ($55.60, $55.69, $55.68), the two larger online purchases on 18 December ($85.57, $78.56) and the repeated same-amount charges going back to July, and asks for the card to be blocked. That denial converts the previously ambiguous picture into a repudiated set of transactions (policy R2). It is corroborated by three prior confirmed-fraud cases on this very card (CC-3566, CC-3422, CC-0056, all card-not-present), by the structure of the episode itself (three charges of essentially the same amount within 21 minutes from three variations of chrome 66.0 devices, several flagged New), and by rare device profiles in the episode (SM-J700M Build/MMB29K, 24 cards all-time; ALE-L23 Build/HuaweiALE-L23, 18 cards all-time) that also appear on cards carrying large clusters of confirmed CNP fraud. The repeated-amount pattern is not a legitimate recurring charge: the gaps are irregular (17, 12, 0, 9, 10, 0 days), looks_monthly is false, and the cardholder denies any subscription at that amount, so R7 does not apply. The individual amounts sit right on the card's mean ($54.02), which is why the model scored the flagged item only 0.38 - low-and-slow abuse on a very high-volume online card."
+  }
+]
