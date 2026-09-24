@@ -1,0 +1,15 @@
+// Knowledge layer for GraphRAG (M2). Entity/case vertices come with M1's schema.gsql.
+// {GRAPH} is substituted by etl/ingest_docs.py --setup.
+USE GRAPH {GRAPH}
+CREATE SCHEMA_CHANGE JOB add_knowledge_layer FOR GRAPH {GRAPH} {
+  ADD VERTEX PolicyChunk (PRIMARY_ID id STRING, source STRING, section STRING, title STRING, text STRING, rule_ids SET<STRING>, pattern_ids SET<STRING>) WITH primary_id_as_attribute="true";
+  ADD VERTEX FraudPattern (PRIMARY_ID id STRING, name STRING, documented BOOL) WITH primary_id_as_attribute="true";
+  ADD DIRECTED EDGE DESCRIBES (FROM PolicyChunk, TO FraudPattern) WITH REVERSE_EDGE="DESCRIBED_BY";
+}
+RUN SCHEMA_CHANGE JOB add_knowledge_layer
+DROP JOB add_knowledge_layer
+CREATE SCHEMA_CHANGE JOB add_policy_emb FOR GRAPH {GRAPH} {
+  ALTER VERTEX PolicyChunk ADD VECTOR ATTRIBUTE emb(DIMENSION=384, METRIC="COSINE");
+}
+RUN SCHEMA_CHANGE JOB add_policy_emb
+DROP JOB add_policy_emb

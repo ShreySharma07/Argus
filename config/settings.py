@@ -25,3 +25,5 @@ TG_ENV_KEYS = (
 
 def tg_env() -> dict[str, str]:
     return {k: os.environ[k] for k in TG_ENV_KEYS if os.getenv(k)}
+
+KNOWLEDGE_CHUNKS = ROOT / "data" / "knowledge" / "chunks.jsonl"

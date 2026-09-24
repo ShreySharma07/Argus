@@ -3,3 +3,6 @@ mcp>=1.0.0
 pyTigerGraph>=2.0.4
 python-dotenv>=1.0.0
 PyYAML>=6.0
+fastembed>=0.3
+numpy
+pypdf

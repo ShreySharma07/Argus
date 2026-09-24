@@ -1,0 +1,69 @@
+# Fraud Policy v1.0, transcribed from the dataset README ("Fraud Policy" section).
+# Action names and routes are the exact identifiers the answer key expects.
+
+version: "1.0"
+
+routes: [auto, L1, L2]
+
+# §1 Actions + §2 Approval routing.
+# `route` is fixed unless `route_by_exposure` is given.
+actions:
+  ALLOW_TRANSACTION:       {route: auto, impact: none,      desc: "Let the flagged transaction stand"}
+  DECLINE_TRANSACTION:     {route: L1,   impact: low,       desc: "Decline the flagged authorization only. Card stays active"}
+  MONITOR_CARD:            {route: auto, impact: none,      desc: "Card stays active; raise monitoring sensitivity for 72 hours"}
+  MONITOR_CONNECTED_CARDS: {route: auto, impact: none,      desc: "Monitor other cards linked to the same device profile, region cluster, or ring"}
+  WARN_CUSTOMER:           {route: auto, impact: none,      desc: "Send an informational message"}
+  VERIFY_WITH_CUSTOMER:    {route: auto, impact: low,       desc: "Ask the cardholder whether they made the transaction"}
+  STEP_UP_AUTH:            {route: auto, impact: low,       desc: "Require OTP or app confirmation before further activity"}
+  BLOCK_CARD:
+    impact: high
+    desc: "Block this card and reissue"
+    route_by_exposure:            # exposure <= limit -> L1, else L2
+      limit_usd: 2500
+      at_or_below: L1
+      above: L2
+  BLOCK_ALL_CARDS:         {route: L2,   impact: very_high, desc: "Block every card the customer holds"}
+  GENERATE_REPORT:         {route: auto, impact: none,      desc: "Internal write-up without opening a case"}
+  CREATE_CASE:             {route: auto, impact: none,      desc: "Open an internal fraud case and write it to the graph"}
+  FILE_REPORT:             {route: L2,   impact: none,      desc: "File a suspicious activity report with the regulator"}
+  ESCALATE_TO_ANALYST:     {route: auto, impact: none,      desc: "Hand the case to a human analyst with the evidence"}
+  CLOSE_NO_FRAUD:          {route: auto, impact: none,      desc: "Close the alert as legitimate"}
+
+# The agent may only execute `auto` actions; L1/L2 are recommended and wait for a human.
+executable_routes: [auto]
+
+# Actions the agent may take to gather evidence without approval (§5),
+# mapped to the answer-file `evidence_requests[].type`.
+evidence_actions:
+  VERIFY_WITH_CUSTOMER: customer_validation
+  STEP_UP_AUTH: step_up_auth
+  ESCALATE_TO_ANALYST: analyst_info
+
+# Numeric thresholds referenced by rules R1–R10, §3a, §6.
+thresholds:
+  r1_weak_signal_max_prob: 0.70        # single signal and p < 0.70 -> verify before block
+  r2_report_exposure_usd: 1000         # denial + exposure > 1000 -> FILE_REPORT
+  r4_escalate_exposure_usd: 500        # no reply + exposure > 500 -> escalate
+  r5_min_small_auths: 3                # card testing: >= 3 small online auths
+  r5_window_minutes: 60                #   within an hour
+  r5_small_auth_usd: 5                 #   "often under $5" (pattern description)
+  r5_block_if_cleared_over_usd: 100    # purchase > $100 already cleared -> BLOCK_CARD
+  r8_escalate_exposure_usd: 500        # uncertain + exposure > 500 -> escalate
+  r10_min_cards_confirmed: 2           # BLOCK_ALL_CARDS needs >= 2 cards with confirmed fraud
+  case_open_min_prob: 0.30             # §3a: open a case at p >= 0.30
+  sar_exposure_usd: 1000               # §3a: SAR if confirmed/strongly suspected and exposure > 1000
+  stop_high_prob: 0.85                 # §6: stop at p >= 0.85 ...
+  stop_low_prob: 0.15                  #     ... or p <= 0.15
+  stop_min_independent_evidence: 2     #     with >= 2 independent pieces of evidence
+
+rules:
+  R1:  {name: verify_weak_signal,     recommend: [VERIFY_WITH_CUSTOMER, STEP_UP_AUTH], forbid_before_verify: [BLOCK_CARD, BLOCK_ALL_CARDS]}
+  R2:  {name: customer_denies,        recommend: [BLOCK_CARD, CREATE_CASE], conditional: {FILE_REPORT: "exposure > 1000 or shared device profile or linked to another card's fraud"}}
+  R3:  {name: customer_confirms,      recommend: [CLOSE_NO_FRAUD]}
+  R4:  {name: no_reply_24h,           recommend: [MONITOR_CARD, DECLINE_TRANSACTION], conditional: {ESCALATE_TO_ANALYST: "exposure > 500"}}
+  R5:  {name: card_testing,           recommend: [DECLINE_TRANSACTION, STEP_UP_AUTH], conditional: {BLOCK_CARD: "purchase > $100 already cleared"}}
+  R6:  {name: shared_origin,          recommend: [CREATE_CASE, FILE_REPORT, MONITOR_CONNECTED_CARDS]}
+  R7:  {name: disputed_but_recurring, recommend: [CREATE_CASE, VERIFY_WITH_CUSTOMER, WARN_CUSTOMER], forbid: [BLOCK_CARD, BLOCK_ALL_CARDS]}
+  R8:  {name: escalate_uncertain,     recommend: [ESCALATE_TO_ANALYST]}
+  R9:  {name: undocumented_pattern,   recommend: [CREATE_CASE, FILE_REPORT, ESCALATE_TO_ANALYST]}
+  R10: {name: block_all_guard,        forbid_unless: {BLOCK_ALL_CARDS: ">= 2 of customer's cards confirmed fraud or credentials confirmed compromised"}}

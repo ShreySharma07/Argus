@@ -58,7 +58,7 @@ ALLOWED_TOOLS = frozenset({
 ALLOWED_QUERIES = frozenset({
     "entity_profile", "txn_neighborhood", "shared_entities", "velocity_window",
     "ring_detect", "entity_centrality", "similar_cases",
-    "upsert_case", "add_evidence", "add_action",
+    "upsert_case", "add_evidence", "add_action", "policy_search",
 })
 ALLOWED_QUERY_PREFIXES = ("pattern_",)
 
