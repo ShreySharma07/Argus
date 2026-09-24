@@ -1,0 +1,18 @@
+USE GRAPH {GRAPH}
+CREATE OR REPLACE QUERY link_case(STRING case_vid, STRING card_id, SET<STRING> txn_ids, SET<STRING> connected_cards,
+                                  SET<STRING> similar_cases, SET<STRING> patterns, SET<STRING> devices) FOR GRAPH {GRAPH} {
+  // Write-back: link an AgentCase vertex (already upserted with its attributes + embedding)
+  // to the entities it concerns, so later investigations can traverse to it.
+  INSERT INTO CASE_ON_CARD VALUES (case_vid, card_id);
+  T = to_vertex_set(txn_ids, "Transaction");
+  X = SELECT t FROM T:t ACCUM INSERT INTO CASE_TXN VALUES (case_vid, t);
+  K = to_vertex_set(connected_cards, "Card");
+  X = SELECT k FROM K:k ACCUM INSERT INTO CASE_CONNECTED VALUES (case_vid, k);
+  C = to_vertex_set(similar_cases, "ClosedCase");
+  X = SELECT cc FROM C:cc ACCUM INSERT INTO CASE_SIMILAR VALUES (case_vid, cc);
+  P = to_vertex_set(patterns, "FraudPattern");
+  X = SELECT p FROM P:p ACCUM INSERT INTO CASE_PATTERN VALUES (case_vid, p);
+  D = to_vertex_set(devices, "DeviceProfile");
+  X = SELECT d FROM D:d ACCUM INSERT INTO CASE_DEVICE VALUES (case_vid, d);
+  PRINT T.size() AS txns, K.size() AS connected, C.size() AS similar, P.size() AS patterns, D.size() AS devices;
+}

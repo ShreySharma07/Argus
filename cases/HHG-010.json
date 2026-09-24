@@ -1,0 +1,214 @@
+{
+  "case_id": "HHG-010",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.9,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3506725"
+    ],
+    "first_suspicious_txn_id": "3506725",
+    "connected_card_ids": [
+      "C11000-K2",
+      "C00854-K2",
+      "C11309-K1",
+      "C09241-K2",
+      "C08918-K2",
+      "C12690-K2"
+    ],
+    "connected_device_profiles": [
+      "Windows | Windows 10 | edge 16.0 | 1366x768",
+      "MacOS | Mac OS X 10_13_4 | safari generic | 1440x900"
+    ],
+    "exposure_usd": 1000.03,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3506725 is $1,000.03 online, 7.62x the card's 180d mean of $131.25, z=4.97, and above the card's 180d maximum of $670.04.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3506725",
+          "C10434-K1"
+        ]
+      },
+      {
+        "claim": "Card baseline over 180 days: 33 txns, mean $131.25, max $670.04, balanced channels (16 online / 17 in-person), product R in 9 of 33 txns, region 469 in 24 txns \u2014 so channel, product and region of the flagged txn are all normal; only the amount and device are not.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C10434-K1"
+        ]
+      },
+      {
+        "claim": "The transaction device 'Windows | Windows 10 | edge 16.0 | 1366x768' is not in the card's 11 known devices and the identity record marks it 'New' for this account; recipient email domain is anonymous.com and no proxy is recorded.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3506725",
+          "C10434-K1"
+        ]
+      },
+      {
+        "claim": "The same device string appears on six cards linked through the rare device 'MacOS | Mac OS X 10_13_4 | safari generic | 1440x900' (27 cards all-time, 22 in window): C11000-K2, C00854-K2, C11309-K1, C09241-K2, C08918-K2, C12690-K2 \u2014 each with many confirmed account-takeover / CNP fraud cases.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C11000-K2",
+          "C00854-K2",
+          "C11309-K1",
+          "C09241-K2",
+          "C08918-K2",
+          "C12690-K2"
+        ]
+      },
+      {
+        "claim": "Only one transaction sits in the episode window; there is no burst of 2-4 online charges, no card-testing run (card_testing_runs empty) and no just-under-$500 run, so the classic pattern-2 burst signature is absent.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3506725"
+        ]
+      },
+      {
+        "claim": "Prior closed case on the same customer, CC-0873, was a 0.93-scored $50.05 transaction cleared after the cardholder confirmed it \u2014 this customer has a history of high-scoring but legitimate activity, which argued for verification rather than an immediate block.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-0873",
+          "C10434-K1"
+        ]
+      },
+      {
+        "claim": "Five semantically similar closed cases (CC-3506, CC-0871, CC-5525, CC-0267, CC-0269, similarity 0.79-0.80) were all cleared as genuine purchases from a new phone, but all involved amounts of $19.98-$160.78, far below this $1,000.03 charge.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-3506",
+          "CC-0871",
+          "CC-5525",
+          "CC-0267",
+          "CC-0269"
+        ]
+      },
+      {
+        "claim": "Region 469 is the cardholder's home region (24 of 33 historical txns) and the region cluster shows 7 newcomer cards in 7 days with 3 carrying fraud history (43% vs 10% base rate), but this card is not a newcomer, so the region cluster adds little here.",
+        "source": "graph",
+        "ref": "query:region_newcomers",
+        "entity_ids": [
+          "C10434-K1",
+          "C01782-K2",
+          "C08637-K2",
+          "C10599-K1"
+        ]
+      },
+      {
+        "claim": "R1 required verification before any block: pre-verification probability 0.58 is below 0.70; R8 also applied because the verdict was uncertain with exposure above $500.",
+        "source": "document",
+        "ref": "policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Customer denies the transaction and does not recognise the device, triggering R2 (BLOCK_CARD, CREATE_CASE) and FILE_REPORT since exposure of $1,000.03 exceeds $1,000 and the case connects to a shared device profile (R6, \u00a73a).",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3506725",
+          "C10434-K1"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0873",
+      "CC-3506",
+      "CC-0871",
+      "CC-5525",
+      "CC-0267",
+      "CC-0269"
+    ],
+    "summary": "Card C10434-K1 was flagged on a single $1,000.03 online purchase (txn 3506725) in its home region 469. The amount is 4.97 SD above the card's mean and exceeds its 180-day maximum, and the purchase came from a Windows 10 / Edge 16.0 device flagged 'New' for the account. That device string is also used by six cards inside a rare-device fraud cluster with dozens of confirmed account-takeover and CNP fraud cases, which distinguishes this from the benign 'new phone' pattern seen in this customer's own cleared case CC-0873 and in the similar closed cases. With no burst and an otherwise normal channel/product/region profile, the pre-verification read was uncertain at 0.58 and R1/R8 required customer validation. On the assumed denial, the case reads as card-not-present fraud from a new device tied to a shared-origin cluster: block the card, create a case, file a report (exposure > $1,000 and shared device link), and monitor the connected cards.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-010"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer denies the $1,000.03 online purchase of 2016-12-02 and states they do not recognise the Windows 10 / Edge 16.0 device."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "\u00a75/\u00a76: p=0.58 is not decisive; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: a case is opened whenever evidence is requested"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R1: keep the card active but raise monitoring while verification is pending"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: uncertain with exposure $1,000.03 > $500"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denies the transaction; exposure $1,000.03 <= $2,500 -> L1"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "\u00a73a/R2/R6/R9: report conditions met (see sar.reason)"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: monitor 6 card(s) sharing Device profile 'Windows | Windows 10 | edge 16.0 | 1366x768', used on the flagged transaction and on six cards in the rare-device cluster that carry confirmed fraud cases"
+      }
+    ],
+    "what_changed": "Verification moved the case from uncertain (0.58) to fraud (0.90): the customer's denial removed the benign 'new device bought by the cardholder' explanation that this customer's own cleared history had made plausible, and the initial VERIFY_WITH_CUSTOMER action became BLOCK_CARD, CREATE_CASE, FILE_REPORT and MONITOR_CONNECTED_CARDS."
+  },
+  "sar": {
+    "file": true,
+    "reason": "File: exposure $1,000.03 exceeds $1,000 (\u00a73a, R2); activity connects to a shared origin / other customers' fraud (Device profile 'Windows | Windows 10 | edge 16.0 | 1366x768', used on the flagged transaction and on six cards in the rare-device cluster that carry confirmed fraud cases) (\u00a73a, R6).",
+    "narrative": "This report is filed to document suspected card-not-present (CNP) fraud carried out from a newly observed device on an account belonging to customer C10434, card C10434-K1. On 2016-12-02 at 15:18:27, transaction 3506725 was authorized as a $1,000.03 online purchase billed to region 469, the cardholder's home region. The amount is 7.62 times the card's 180-day mean of $131.25 (z=4.97) and exceeds the card's 180-day maximum of $670.04; over that baseline the card recorded 33 transactions with balanced channel use (16 online, 17 in-person) and 24 transactions in region 469, so the channel, product and region of the flagged transaction were consistent with history while the amount and the originating device were not. The purchase originated from device profile 'Windows | Windows 10 | edge 16.0 | 1366x768', which is not among the card's 11 known devices and is marked 'New' on the identity record; the recipient email domain was anonymous.com and no proxy was recorded. The same device string appears on six other cards \\u2014 C11000-K2, C00854-K2, C11309-K1, C09241-K2, C08918-K2 and C12690-K2 \\u2014 which are linked through the rare device profile 'MacOS | Mac OS X 10_13_4 | safari generic | 1440x900' (27 cards all-time, 22 in the review window) and which each carry confirmed account-takeover and CNP fraud cases. Only one transaction fell within the episode window, with no burst of online charges, no card-testing run and no just-under-$500 sequence, and the customer's own prior case CC-0873 plus five similar closed cases (CC-3506, CC-0871, CC-5525, CC-0267, CC-0269, amounts $19.98-$160.78) had been cleared as genuine purchases from new devices, so the pre-verification assessment was uncertain at 0.58 and policy R1/R8 required customer validation before any block. On contact, the customer denied the $1,000.03 purchase of 2016-12-02 and stated they did not recognize the Windows 10 / Edge 16.0 device, raising the fraud assessment to 0.90. The activity is considered suspicious because a first-time device tied to a known multi-card fraud cluster was used to place a single high-value online order far outside the card's established spending range, to a recipient using an anonymized email domain, and the cardholder disclaimed the charge. Total exposure is $1,000.03 on the single transaction 3506725. Card C10434-K1 was blocked (route L1), a fraud case was created, this report was filed because exposure exceeds $1,000 and the case connects to a shared device profile, and the six connected cards sharing the device profile are under continued monitoring.",
+    "subjects": [
+      "C10434",
+      "C10434-K1",
+      "C11000-K2",
+      "C00854-K2",
+      "C11309-K1",
+      "C09241-K2",
+      "C08918-K2",
+      "C12690-K2",
+      "Windows | Windows 10 | edge 16.0 | 1366x768",
+      "MacOS | Mac OS X 10_13_4 | safari generic | 1440x900"
+    ],
+    "total_amount_usd": 1000.03,
+    "activity_dates": [
+      "2016-12-02",
+      "2016-12-02"
+    ]
+  },
+  "stop_reason": "Probability is at 0.90 after a decisive customer denial, supported by at least two independent structural signals (amount above card maximum, New device shared with six confirmed-fraud cards). Further queries would not change the decision.",
+  "tool_calls": 10,
+  "tokens": 23232,
+  "latency_s": 77.2
+}

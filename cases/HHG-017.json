@@ -1,0 +1,183 @@
+{
+  "case_id": "HHG-017",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.07,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3450629 is $100.09, 0.28x the card's 180d mean of $360.18 (amount_z = -0.58) and far below the card max of $2,892.12 \u2014 no amount anomaly.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C04570-K1",
+          "3450629"
+        ]
+      },
+      {
+        "claim": "Channel (online, 67.3% of history), product R (55.8% of history) and region 204 (5 prior txns) all match the cardholder's established baseline; new_region_for_card = false.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C04570-K1",
+          "3450629"
+        ]
+      },
+      {
+        "claim": "The device 'Windows | Windows 10 | chrome 65.0 | 1920x1080' appears 3 times in the card's own 180d history and device_new_flag is 'Found' \u2014 not a new-device CNP case.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3450629",
+          "C04570-K1"
+        ]
+      },
+      {
+        "claim": "Episode window contains only 3 online txns of $100.09, $99.96 and $100.09 within 70 minutes on the same known device; the first two scored 0.05 and 0.10. No sub-$5 authorizations and no escalating larger purchase, so the card_testing sequence is absent (card_testing_runs empty).",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3450436",
+          "3450503",
+          "3450629"
+        ]
+      },
+      {
+        "claim": "Adverse signal: the flagged leg carries IP_PROXY:HIDDEN and email domain anonymous.com, while the two earlier identical charges had no proxy flag \u2014 an unnamed-feature inconsistency, but the email domain is generic in this dataset and the proxy alone is weak.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3450629"
+        ]
+      },
+      {
+        "claim": "No rare shared device profiles and no cards linked by rare device; customer has no other cards. No shared-origin evidence under R6.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C04570-K1"
+        ]
+      },
+      {
+        "claim": "Region 204 shows 36 newcomer cards in 7 days with a 0.19 fraud-history rate vs 0.10 base, but C04570-K1 is not a newcomer (5 prior txns in 204), so the cluster does not implicate this card.",
+        "source": "graph",
+        "ref": "query:region_newcomers",
+        "entity_ids": [
+          "C04570-K1",
+          "C00866-K1",
+          "C01719-K1",
+          "C07927-K1",
+          "C00559-K1",
+          "C05309-K1",
+          "C04346-K2",
+          "C11792-K1"
+        ]
+      },
+      {
+        "claim": "Prior case CC-1383 on this same card: a $99.98 txn scored 0.91, cardholder confirmed, alert cleared \u2014 this card generates high model scores on ordinary ~$100 activity.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-1383",
+          "C04570-K1"
+        ]
+      },
+      {
+        "claim": "Five semantically similar closed cases (CC-2537, CC-2533, CC-4046, CC-0657, CC-0439), all score-triggered, all cleared after cardholder confirmation.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-2537",
+          "CC-2533",
+          "CC-4046",
+          "CC-0657",
+          "CC-0439"
+        ]
+      },
+      {
+        "claim": "R1 requires verification rather than a block when the case rests on a single weak signal with probability below 0.70.",
+        "source": "document",
+        "ref": "policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Cardholder confirms making the three ~$100 online purchases from their own laptop on 2016-11-11.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3450436",
+          "3450503",
+          "3450629"
+        ]
+      },
+      {
+        "claim": "R3: on customer confirmation, close with no fraud and note the confirmation in the case file.",
+        "source": "document",
+        "ref": "policy:R3",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1383",
+      "CC-2537",
+      "CC-4046",
+      "CC-0439"
+    ],
+    "summary": "Case HHG-017 was opened purely on a 0.57 model score for a $100.09 online purchase. Everything structural points to normal behaviour: the amount is below the card's mean, the channel, product and region 204 are all established for this card, and the device was already seen three times in the card's own history. The two companion ~$100 charges in the same hour scored 0.05 and 0.10 and read as retries of one order, not a card-testing ladder; there are no rare shared devices, no linked cards, and the region-204 newcomer cluster does not include this card. The only adverse item is the HIDDEN proxy flag on the flagged leg. Prior case CC-1383 on this very card cleared on the same kind of alert. Under R1 we verified with the cardholder, who confirmed the purchases; recommend CLOSE_NO_FRAUD under R3, no report.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-017"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms they made the three ~$100 online purchases on 2016-11-11 (the first two attempts failed/were re-submitted, the third completed) from their own laptop; they recognise the merchant."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: p=0.25 is not decisive; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: a case is opened whenever evidence is requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: activity is the cardholder's own; let the transaction stand"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: close the alert as legitimate and note the confirmation"
+      }
+    ],
+    "what_changed": "Customer confirmation removed the residual doubt created by the proxy flag, moving fraud probability from 0.25 to 0.07 and the action from VERIFY_WITH_CUSTOMER to CLOSE_NO_FRAUD."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Verification response settled the question: customer confirmed the transactions and all structural evidence (amount, region, device, product, prior cleared case) is consistent with legitimate use. Further steps would not change the decision.",
+  "tool_calls": 9,
+  "tokens": 12172,
+  "latency_s": 47.9
+}
