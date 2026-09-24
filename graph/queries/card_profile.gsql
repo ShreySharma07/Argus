@@ -1,0 +1,38 @@
+USE GRAPH {GRAPH}
+CREATE OR REPLACE QUERY card_profile(VERTEX<Card> card, DATETIME as_of, INT lookback_days = 180) FOR GRAPH {GRAPH} {
+  // Baseline behaviour of a card strictly before as_of: spend stats, channel/product/region/device/email mix.
+  SumAccum<INT> @@n;
+  SumAccum<DOUBLE> @@total;
+  SumAccum<DOUBLE> @@sq;
+  MaxAccum<DOUBLE> @@max_amt;
+  MinAccum<DATETIME> @@first_ts;
+  MaxAccum<DATETIME> @@last_ts;
+  MapAccum<STRING, SumAccum<INT>> @@channels;
+  MapAccum<STRING, SumAccum<INT>> @@products;
+  MapAccum<STRING, SumAccum<INT>> @@regions;
+  MapAccum<STRING, SumAccum<INT>> @@countries;
+  MapAccum<STRING, SumAccum<INT>> @@emails;
+  MapAccum<STRING, SumAccum<INT>> @@devices;
+  DATETIME start_ts;
+  start_ts = datetime_sub(as_of, INTERVAL lookback_days DAY);
+
+  S = {card};
+  T = SELECT t FROM S:c -(MADE>)- Transaction:t
+      WHERE t.ts < as_of AND t.ts >= start_ts
+      ACCUM @@n += 1, @@total += t.amount, @@sq += t.amount * t.amount, @@max_amt += t.amount,
+            @@first_ts += t.ts, @@last_ts += t.ts,
+            @@channels += (t.channel -> 1), @@products += (t.product_cd -> 1),
+            IF t.addr1 != "" THEN @@regions += (t.addr1 -> 1) END,
+            IF t.addr2 != "" THEN @@countries += (t.addr2 -> 1) END,
+            IF t.p_email != "" THEN @@emails += (t.p_email -> 1) END;
+  D = SELECT d FROM T:t -(FROM_DEVICE>)- DeviceProfile:d ACCUM @@devices += (d.id -> 1);
+  owner = SELECT o FROM S:c -(OWNED_BY>)- Customer:o;
+  cards = SELECT k FROM owner:o -(OWNS>)- Card:k;
+
+  PRINT card.id AS card_id, card.customer_id AS customer_id, card.network AS network, card.card_type AS card_type,
+        @@n AS n_txns, @@total AS total, @@sq AS sum_sq, @@max_amt AS max_amount,
+        @@first_ts AS first_ts, @@last_ts AS last_ts,
+        @@channels AS channels, @@products AS products, @@regions AS regions, @@countries AS countries,
+        @@emails AS emails, @@devices AS devices;
+  PRINT cards[cards.id, cards.network, cards.card_type] AS customer_cards;
+}

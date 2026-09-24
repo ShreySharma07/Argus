@@ -1,0 +1,14 @@
+USE GRAPH {GRAPH}
+CREATE OR REPLACE QUERY card_activity(VERTEX<Card> card, DATETIME start_ts, DATETIME end_ts, INT max_rows = 500) FOR GRAPH {GRAPH} {
+  // Every transaction on the card in [start_ts, end_ts], oldest first, with device profile and any prior closed case.
+  SumAccum<STRING> @device;
+  SetAccum<STRING> @cases;
+  S = {card};
+  T = SELECT t FROM S:c -(MADE>)- Transaction:t WHERE t.ts >= start_ts AND t.ts <= end_ts;
+  X = SELECT t FROM T:t -(FROM_DEVICE>)- DeviceProfile:d ACCUM t.@device += d.id;
+  Y = SELECT t FROM T:t -(INVOLVED_IN>)- ClosedCase:cc ACCUM t.@cases += cc.id + ":" + cc.outcome + ":" + cc.pattern;
+  T = SELECT t FROM T:t ORDER BY t.ts ASC LIMIT max_rows;
+  PRINT T[T.id, T.ts, T.amount, T.product_cd, T.channel, T.risk_score, T.addr1, T.addr2, T.dist1, T.dist2,
+          T.p_email, T.r_email, T.device_type, T.id_15, T.id_23, T.id_34, T.M4, T.M5, T.M6,
+          T.C1, T.C13, T.C14, T.D1, T.D15, T.@device, T.@cases] AS txns;
+}

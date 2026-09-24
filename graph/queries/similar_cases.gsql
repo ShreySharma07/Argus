@@ -1,0 +1,26 @@
+USE GRAPH {GRAPH}
+CREATE OR REPLACE QUERY similar_cases(VERTEX<Card> card, DATETIME as_of, DATETIME device_since, INT max_device_cards = 200) FOR GRAPH {GRAPH} {
+  // Structural case memory: closed cases (closed before as_of) on the same customer's cards,
+  // naming one of those cards as connected, or involving a device profile this card used
+  // since device_since. Very common devices (> max_device_cards cards) are skipped as non-evidence.
+  SetAccum<STRING> @why;
+  SetAccum<STRING> @dev;
+  SetAccum<STRING> @cards;
+  S = {card};
+  owner = SELECT o FROM S:c -(OWNED_BY>)- Customer:o;
+  mine = SELECT k FROM owner:o -(OWNS>)- Card:k;
+  C1 = SELECT cc FROM mine:k -(CARD_CASE>)- ClosedCase:cc WHERE cc.closed_at < as_of
+       ACCUM cc.@why += "same_customer";
+  C2 = SELECT cc FROM mine:k -(CONNECTED_CASE>)- ClosedCase:cc WHERE cc.closed_at < as_of
+       ACCUM cc.@why += "connected_card";
+  T = SELECT t FROM S:c -(MADE>)- Transaction:t WHERE t.ts >= device_since AND t.ts <= as_of;
+  D = SELECT d FROM T:t -(FROM_DEVICE>)- DeviceProfile:d;
+  DT = SELECT t FROM D:d -(DEVICE_OF>)- Transaction:t ACCUM d.@cards += t.card_id;
+  D = SELECT d FROM D:d WHERE d.@cards.size() <= max_device_cards;
+  DT = SELECT t FROM D:d -(DEVICE_OF>)- Transaction:t ACCUM t.@dev += d.id;
+  C3 = SELECT cc FROM DT:t -(INVOLVED_IN>)- ClosedCase:cc WHERE cc.closed_at < as_of
+       ACCUM cc.@why += "shared_device", cc.@dev += t.@dev;
+  A = C1 UNION C2 UNION C3;
+  PRINT A[A.id, A.card_id, A.outcome, A.pattern, A.exposure_usd, A.n_txns, A.opened_at, A.closed_at,
+          A.actions_taken, A.report_filed, A.analyst_notes, A.@why AS why, A.@dev AS devices] AS cases;
+}

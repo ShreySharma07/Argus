@@ -90,18 +90,20 @@ Files: `graph/schema.gsql` (entities + prior cases), `graph/schema_knowledge.gsq
 
 ## 3. GSQL queries (installed)
 
+All in `graph/queries/`, installed with `python -m graph.setup --queries`, called only via the MCP allowlist. Time params bound every query to data **before the alert** (no future leakage).
+
 | Query | Purpose |
 |---|---|
-| `entity_profile` | Customer/card baseline: spend stats, typical devices, emails, addresses |
-| `txn_neighborhood(k)` | k-hop context around a transaction |
-| `shared_entities` | Other customers/cards sharing device, IP, email, address |
-| `velocity_window` | Txn bursts, new-device + high-amount, time anomalies |
-| `ring_detect` | WCC / Louvain on card–device–email subgraph → ring size, fraud density |
-| `entity_centrality` | PageRank on suspicious subgraph |
-| `pattern_<name>` ×5 | One detector per documented pattern: card_testing, card_not_present_fraud, card_not_present_new_device, out_of_region_use, account_takeover |
-| `similar_cases` | Prior cases sharing entities/pattern + outcome |
-| `upsert_case`, `add_evidence`, `add_action` | Write-back |
-| `policy_search(qv, k)` | GraphRAG: vectorSearch over `PolicyChunk.emb` + linked patterns (installed) |
+| `card_profile(card, as_of, lookback_days)` | Baseline before `as_of`: n, total, sum_sq, max, channel/product/region/country/email/device mix, customer's other cards |
+| `card_activity(card, start_ts, end_ts)` | Txns in window, oldest first, with device profile, id_15/id_23/id_34, M4–M6, C/D samples, and any prior ClosedCase on the txn |
+| `shared_devices(card, start_ts, end_ts)` | Devices the card used + how common each is (all-time cards) + other cards on them in the window with their confirmed-fraud cases (R6) |
+| `region_newcomers(region, start_ts, end_ts)` | Cards active in a region in the window with no prior history there (+ fraud cases): region-cluster signal (R6) |
+| `similar_cases(card, as_of, device_since)` | Structural memory: ClosedCases on same customer / connected card / shared (non-popular) device, tagged `why` |
+| `case_vector_search(qv, k)` | ClosedCase by `notes_emb` similarity (weak for templated risk-score alerts; use as a secondary signal) |
+| `policy_search(qv, k)` | GraphRAG over `PolicyChunk.emb` + linked patterns |
+| `upsert_case`, `add_evidence`, `add_action` | Write-back (M4) |
+
+**Pattern detection** runs in Python (`agent/scoring.py`) over these outputs rather than as 5 GSQL queries: tuning against the 20 cases needs fast iteration, and each GSQL change costs a ~1 min reinstall.
 
 ---
 

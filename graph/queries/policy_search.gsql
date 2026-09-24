@@ -1,9 +1,11 @@
 USE GRAPH {GRAPH}
-CREATE OR REPLACE QUERY policy_search(LIST<FLOAT> qv, INT k = 5) FOR GRAPH {GRAPH} {
-  // Top-k policy/pattern/regulation chunks by cosine distance, plus the patterns they describe.
+CREATE OR REPLACE QUERY policy_search(LIST<FLOAT> qv, INT k = 5, SET<STRING> sources) FOR GRAPH {GRAPH} {
+  // Top-k knowledge chunks by cosine distance, restricted to `sources`
+  // (policy | pattern | guidance | regulation; empty = all), plus the patterns they describe.
   MapAccum<VERTEX, FLOAT> @@dist;
   SetAccum<STRING> @patterns;
-  hits = vectorSearch({PolicyChunk.emb}, qv, k, {distance_map: @@dist});
+  cand = SELECT c FROM PolicyChunk:c WHERE sources.size() == 0 OR sources.contains(c.source);
+  hits = vectorSearch({PolicyChunk.emb}, qv, k, {candidate_set: cand, distance_map: @@dist});
   linked = SELECT c FROM hits:c -(DESCRIBES>)- FraudPattern:p ACCUM c.@patterns += p.id;
   PRINT hits[hits.id, hits.source, hits.section, hits.title, hits.text, hits.@patterns] AS chunks;
   PRINT @@dist AS distances;

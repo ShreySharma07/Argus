@@ -7,3 +7,4 @@ fastembed>=0.3
 numpy
 pypdf
 pandas
+rank_bm25

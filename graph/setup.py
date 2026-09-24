@@ -2,6 +2,7 @@
 
     python -m graph.setup            # schema + loading job
     python -m graph.setup --job-only # (re)create the loading job only
+    python -m graph.setup --queries  # create + install graph/queries/*.gsql
 
 The loading job is generated from the TSV headers written by etl.prepare so the
 column order can never drift; the generated GSQL is saved to
@@ -65,12 +66,28 @@ CREATE LOADING JOB {JOB} FOR GRAPH {TG_GRAPHNAME} {{
 """
 
 
+def install_queries(conn) -> None:
+    files = sorted((GRAPH_DIR / "queries").glob("*.gsql"))
+    for f in files:
+        out = gsql_file(conn, f)
+        print(f"{f.stem}: {out.strip().splitlines()[-1]}")
+        if "fail" in out.lower() or "error" in out.lower():
+            print(out)
+            raise SystemExit(f"query {f.stem} did not compile")
+    names = ", ".join(f.stem for f in files)
+    print(conn.gsql(f"USE GRAPH {TG_GRAPHNAME}\nINSTALL QUERY {names}"))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--job-only", action="store_true")
+    ap.add_argument("--queries", action="store_true")
     args = ap.parse_args()
 
     conn = connect()
+    if args.queries:
+        install_queries(conn)
+        return
     if not args.job_only:
         print(gsql_file(conn, GRAPH_DIR / "schema.gsql"))
     job = loading_job_gsql()
