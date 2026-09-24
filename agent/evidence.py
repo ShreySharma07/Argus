@@ -101,6 +101,7 @@ async def gather(g: GraphTools, case: dict) -> dict:
     ev["profile"] = await g.card_profile(card, fts)
     ev["shared"] = await g.shared_devices(card, ts_shift(fts, days=-30), opened)
     ev["similar"] = await g.similar_cases(card, opened, ts_shift(fts, days=-30))
+    ev["agent_memory"] = await g.agent_case_memory(card, opened, ts_shift(fts, days=-30))
     if flagged["addr1"]:
         ev["region"] = await g.region_newcomers(flagged["addr1"], ts_shift(fts, days=-7), opened)
     if case["trigger_type"] == "customer_report":
@@ -181,11 +182,16 @@ def features(case: dict, ev: dict) -> dict:
         "episode_window_txns": [_txn_view(a, prof) for a in episode][:40],
         "signals": sig,
         "rare_shared_devices": [{"device": d["id"], "cards_all_time": d["cards_all_time"],
-                                 "cards_in_window": d["cards_in_window"]} for d in rare_devs],
+                                 "cards_in_window": d["cards_in_window"]}
+                                for d in sorted(rare_devs, key=lambda d: -d["cards_in_window"])][:15],
+        "rare_shared_devices_total": len(rare_devs),
         "cards_linked_by_rare_device": [{"card": o["id"], "txns": o["n_txns"], "amount": round(o["amount"], 2),
                                          "devices": o["devices"], "confirmed_fraud_cases": o["fraud_cases"]}
                                         for o in linked_cards][:15],
         "region_cluster": region_info,
+        "memory_agent_cases": [{"case_id": m["case_id"], "card": m["card_id"], "opened_at": m["opened_at"],
+                                "verdict": m["verdict"], "probability": m["fraud_probability"], "pattern": m["pattern"],
+                                "why": m["why"], "summary": m["summary"][:260]} for m in ev.get("agent_memory", [])][:5],
         "memory_similar_cases": {
             "counts_by_outcome_pattern": {f"{o}/{p}": c for (o, p), c in sim_counts.most_common()},
             "cases": [{"id": s["id"], "card": s["card_id"], "outcome": s["outcome"], "pattern": s["pattern"],

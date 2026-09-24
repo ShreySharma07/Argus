@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.66,
+    "fraud_probability": 0.84,
     "pattern": "card_not_present_new_device",
     "pattern_description": "",
     "affected_txn_ids": [
@@ -15,112 +15,68 @@
     "exposure_usd": 131.3,
     "evidence": [
       {
-        "claim": "Cardholder C11923 disputes transaction 3583368 for $131.30 dated 2016-12-29 03:27:44.",
-        "source": "customer",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3583368",
-          "C11923",
-          "C11923-K2"
-        ]
-      },
-      {
-        "claim": "Flagged amount $131.30 is 3.33x the 180-day mean of $39.45 (z=2.55) but below the card's observed max of $486.52, so it is unusual but not unprecedented.",
-        "source": "graph",
-        "ref": "query:card_profile",
-        "entity_ids": [
-          "C11923-K2",
-          "3583368"
-        ]
-      },
-      {
-        "claim": "Device 'SM-G610F Build/NRD90M | unknown | chrome 66.0 for android | unknown' is New for the account, but the card's baseline already spans 1,476 distinct devices over 10,286 online transactions, so a previously unseen device is routine for this card.",
-        "source": "graph",
-        "ref": "query:card_profile",
-        "entity_ids": [
-          "C11923-K2",
-          "3583368"
-        ]
-      },
-      {
-        "claim": "Channel and product are unchanged: 100% of the card's 10,286 baseline transactions are online product C, and the flagged transaction is online product C with no new region.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "C11923-K2",
-          "3583368"
-        ]
-      },
-      {
-        "claim": "Two prior transactions on this card carry the identical $131.30 amount (3193355 in 2016-08, 3565743 in 2016-12), 123 days apart; looks_monthly is false, so R7's monthly recurring test is not met but a repeat merchant charge is plausible.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3583368"
-        ]
-      },
-      {
-        "claim": "The flagged device profile appears on only 4 cards all-time (3 in window) and does not appear in the device lists of any of the high-fraud linked cards; the cards linked to this one share only ubiquitous strings such as 'Windows | unknown | chrome 66.0 | unknown', so no shared-origin ring is established.",
-        "source": "graph",
-        "ref": "query:shared_devices",
-        "entity_ids": [
-          "C11923-K2",
-          "C08962-K2",
-          "C05031-K2"
-        ]
-      },
-      {
-        "claim": "The flagged card-testing run (3578451, 3578491, 3578496 then 3578506) did not clear a purchase over $100 and sits inside a stream of ~100 online transactions in the window, so it is background noise on a very high-volume card rather than a testing sequence tied to 3583368.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3578451",
-          "3578506",
-          "C11923-K2"
-        ]
-      },
-      {
-        "claim": "Semantic memory contains several cleared cases where a high-scoring purchase from a newly seen phone was confirmed by the cardholder (CC-3465, CC-0413), cautioning against treating the New device flag as proof.",
-        "source": "graph",
-        "ref": "query:case_vector_search",
-        "entity_ids": [
-          "CC-3465",
-          "CC-0413"
-        ]
-      },
-      {
-        "claim": "Policy R2: on a customer denial, block the card and create a case; exposure of $131.30 is below the $1,000 reporting threshold and no credible shared-device link exists, so no regulatory report.",
-        "source": "document",
-        "ref": "policy:R2",
-        "entity_ids": [
-          "3583368"
-        ]
-      },
-      {
-        "claim": "Customer maintained the denial and did not recognise the Samsung SM-G610F device when the earlier identical charges were put to them.",
+        "claim": "Cardholder C11923 denies the flagged $131.30 charge 3583368 of 2016-12-29 and also denies the two earlier identical $131.30 charges 3193355 and 3565743, stating there is no subscription or instalment plan at that amount and that they do not own or have access to a Samsung SM-G610F phone.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": [
+          "C11923",
+          "3583368"
+        ]
+      },
+      {
+        "claim": "Flagged txn 3583368 was made online from 'SM-G610F Build/NRD90M | unknown | chrome 66.0 for android | unknown' with device_new_flag 'New' and new_device_for_card true \\u2014 a device with no history on card C11923-K2.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
           "3583368",
           "C11923-K2"
         ]
+      },
+      {
+        "claim": "The $131.30 amount is 3.33x the 180-day card mean of $39.45 (amount_z 2.55) though below the card max of $486.52; the card's history is 100% online product C.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C11923-K2",
+          "3583368"
+        ]
+      },
+      {
+        "claim": "The apparent recurring pattern is not monthly: only 2 prior same-amount txns, 123 days apart (2016-08 and 2016-12), looks_monthly false, and the cardholder denies both, so R7 does not apply.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": []
+      },
+      {
+        "claim": "Memory of structurally linked cases is dominated by confirmed fraud of exactly this type (94 card_not_present_new_device, 64 card_not_present_fraud vs 6 cleared), including CC-5499 and CC-5417 where one to three unrecognised online charges of comparable size were confirmed fraudulent and the card blocked.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-5499",
+          "CC-5417"
+        ]
+      },
+      {
+        "claim": "Policy R2 directs BLOCK_CARD and CREATE_CASE when the customer denies the transaction; FILE_REPORT is not triggered here as denied exposure is $393.90 and the flagged device is not among the rare shared device profiles.",
+        "source": "document",
+        "ref": "policy:R2",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
-      "CC-3465",
-      "CC-0413",
-      "CC-5202",
-      "CC-3576"
+      "CC-5499",
+      "CC-5417",
+      "CC-5341"
     ],
-    "summary": "C11923 disputes a single $131.30 online purchase (3583368) on card C11923-K2 made from a Samsung SM-G610F not previously seen on the account. The amount is 3.3x the card's mean but well inside its historical range, the channel and product match 100% of baseline activity, and the card already shows 1,476 distinct devices in 180 days, so the New-device flag is weak here. Two earlier charges for exactly $131.30 (3193355, 3565743) suggested a forgotten repeat merchant charge, so the cardholder was asked to reconcile them; they confirmed the older charges but maintained they placed no December order and do not know the device. On that denial the case moves to fraud under R2: block the card and open a case, with exposure limited to the single $131.30 transaction and no report warranted (under $1,000, no credible shared-device or ring link).",
+    "summary": "Cardholder C11923 disputed a $131.30 online charge (3583368, 2016-12-29 03:27) on card C11923-K2. The charge came from a Samsung SM-G610F device flagged New for this account, at 3.33x the card's mean amount. On validation the cardholder denied not only this charge but also the two earlier identical $131.30 charges (3193355, 3565743), and denied owning the device, removing the possibility that this was their own irregular recurring charge. Denial plus a new-device card-not-present charge plus a strongly fraud-weighted memory base makes this card-not-present fraud from a new device. Total denied exposure is $393.90, below the reporting threshold, and the flagged device is not a rare profile shared with other cards, so a case and a block are warranted rather than a regulatory filing.",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-011"
   },
   "evidence_requests": [
     {
       "type": "customer_validation",
-      "asked_after_step": 4,
-      "assumed_response": "Customer re-confirms they did not make the $131.30 purchase on 2016-12-29 and does not recognise the Samsung SM-G610F Android device; they say the earlier identical charges were their own repeat order with that merchant but they placed no order in December."
+      "asked_after_step": 5,
+      "assumed_response": "The cardholder states they do not recognise the two earlier $131.30 charges (3193355 in August and 3565743 in December) and has no subscription or instalment plan at that amount, and they deny making any purchase in the early hours of 29 December 2016; they do not own or have access to a Samsung SM-G610F Android phone. They request the card be blocked and all three charges disputed."
     }
   ],
   "next_best_actions": {
@@ -128,7 +84,7 @@
       {
         "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "\u00a75/\u00a76: p=0.45 is not decisive; verify before any block"
+        "reason": "R1: p=0.45 is not decisive; verify before any block"
       },
       {
         "action": "CREATE_CASE",
@@ -148,7 +104,7 @@
         "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
       }
     ],
-    "what_changed": "The customer's reconciled denial ruled out the repeat-charge explanation that the two prior identical $131.30 transactions had raised, moving the assessment from uncertain (0.45) to fraud (0.66)."
+    "what_changed": "The customer validation reply denied all three $131.30 charges and denied any access to the SM-G610F device, ruling out the recurring-legitimate-charge explanation and moving the assessment from uncertain (0.45) to fraud (0.84)."
   },
   "sar": {
     "file": false,
@@ -158,8 +114,8 @@
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "The verification response settled the repeat-charge question; exposure is only $131.30, below the R8 escalation and R2/s3a reporting thresholds, and no further graph evidence would change the block-and-case decision.",
-  "tool_calls": 9,
-  "tokens": 76210,
-  "latency_s": 95.5
+  "stop_reason": "Verification settled the question: customer_validation -> denies (policy \u00a76). Verification response settles the question: the cardholder denies the charges, and with the new-device and amount-anomaly signals the case is above 0.85-adjacent certainty on at least three independent pieces of evidence; further requests would not change the decision.",
+  "tool_calls": 10,
+  "tokens": 143348,
+  "latency_s": 105.3
 }

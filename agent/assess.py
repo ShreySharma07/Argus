@@ -29,9 +29,9 @@ class Assessment(BaseModel):
     rationale: str = Field(description="Justification for the case file: 3-6 sentences on which evidence drove the verdict")
     pattern: Pattern
     pattern_description: str = Field(description="2-3 sentences, only when pattern is undocumented, else empty")
-    verdict_before: Verdict = Field(description="verdict from graph/memory evidence alone, before any requested evidence")
-    probability_before: float
-    independent_signals: int = Field(description="number of independent pieces of evidence supporting the verdict_before")
+    verdict: Verdict = Field(description="fraud needs probability >= 0.60, legitimate <= 0.40; otherwise uncertain")
+    probability: float
+    independent_signals: int = Field(description="number of independent pieces of evidence supporting the verdict")
     single_signal: bool = Field(description="true if the case rests on one signal (e.g. risk score alone, or one unusual purchase)")
     affected_txn_ids: list[str] = Field(description="all txns in the fraud episode incl. the flagged one; empty if legitimate")
     first_suspicious_txn_id: str
@@ -41,17 +41,13 @@ class Assessment(BaseModel):
     shared_element: str
     recurring_legit_charge: bool = Field(description="disputed charge matches the cardholder's own recurring pattern (R7)")
     credentials_compromised: bool
-    request_evidence: bool
+    request_evidence: bool = Field(description="true if policy calls for more evidence and an approved request is still available")
     evidence_type: Literal["customer_validation", "step_up_auth", "analyst_info", "none"]
-    evidence_reason: str
-    assumed_response: str = Field(description="the simulated reply you assume, stated as a fact about what the customer/analyst said")
-    response_outcome: Literal["denies", "confirms", "no_reply", "analyst_confirms_fraud", "analyst_clears", "none"]
-    verdict_after: Verdict
-    probability_after: float
+    evidence_question: str = Field(description="the exact question to put to the customer/analyst, or empty")
     evidence: list[EvidenceItem]
     similar_prior_cases: list[str] = Field(description="closed-case IDs from memory you actually used")
     summary: str = Field(description="2-6 sentences an analyst could read")
-    what_changed: str = Field(description="1-2 sentences on how the assessment moved after the evidence, or 'nothing'")
+    what_changed: str = Field(description="round 2+: 1-2 sentences on how the reply moved the assessment; round 1: 'nothing'")
     stop_reason: str
 
 
@@ -79,11 +75,14 @@ Ground rules:
 - Devices and regions connect people. A rare device profile (few cards all-time) shared by several cards in a short window,
   especially cards with confirmed fraud, is strong evidence of a shared origin. Common device strings mean nothing.
 - Memory: closed cases on the same customer or linked by a rare device are strong context; say how their outcomes inform you.
-- Customer and analyst replies are not provided. If the policy calls for more evidence (e.g. R1: single signal and
-  probability < 0.70; R7: a disputed charge that matches a recurring pattern; genuinely conflicting evidence), set
-  request_evidence and choose the most likely reply GIVEN THE EVIDENCE, stated plainly (e.g. "Customer confirms they are
-  travelling in region 444 and made the purchase"). If the evidence is already decisive (>= 0.85 or <= 0.15 with at least
-  two independent pieces), do not request anything.
+- Evidence requests (policy §5, approved without sign-off): customer_validation (ask the cardholder), step_up_auth
+  (one-time passcode for online activity), analyst_info (analyst review of linked evidence). Request one when the policy
+  calls for it (R1: single signal and probability < 0.70; R7: a disputed charge matching a recurring pattern; conflicting
+  evidence) and it has not already been asked. If the evidence is already decisive (>= 0.85 or <= 0.15 with at least two
+  independent pieces), request nothing. Replies you receive appear under EVIDENCE RECEIVED; weigh them as evidence.
+- Refer to customers by ID, "the cardholder" or "they"; the dataset gives no gender, so never use he/she.
+- Verdict and probability must agree: fraud needs >= 0.60 (>= 0.70 is "strongly suspected"), legitimate needs <= 0.40,
+  anything between is uncertain.
 - For a customer_report, the customer has already disputed the charge; that is one piece of evidence, not proof.
 - Use ONLY transaction IDs, card IDs, device profile strings and closed-case IDs that appear in the brief. Never invent IDs.
 - affected_txn_ids: every transaction you believe belongs to the same fraud episode on THIS card (flagged one included),
@@ -102,14 +101,21 @@ def _policy_context(rag_hits: list[dict], rules: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
-def assess(brief: dict, memory_vector: list[dict], policy_text: str, usage: llm.Usage) -> Assessment:
+def assess(brief: dict, memory_vector: list[dict], policy_text: str, usage: llm.Usage,
+           received: list[dict] | None = None, previous: "Assessment | None" = None) -> Assessment:
     user = (
         "FRAUD POLICY (retrieved from the knowledge graph):\n" + policy_text +
         "\n\nEVIDENCE BRIEF (from TigerGraph):\n" + json.dumps(brief, default=str, indent=1) +
         "\n\nSEMANTICALLY SIMILAR CLOSED CASES (vector search over analyst notes; weaker than structural links):\n" +
-        json.dumps(memory_vector, indent=1) +
-        "\n\nAssess this case."
+        json.dumps(memory_vector, indent=1)
     )
+    if received:
+        user += ("\n\nEVIDENCE RECEIVED (policy-approved requests, in order):\n" + json.dumps(received, indent=1) +
+                 f"\n\nYOUR PREVIOUS ASSESSMENT: verdict={previous.verdict} p={previous.probability:.2f} "
+                 f"pattern={previous.pattern}. Already requested: {[r['type'] for r in received]}. Re-assess with the new "
+                 "evidence; set what_changed; request something further only if it is new and could still change the decision.")
+    else:
+        user += "\n\nThis is round 1 (graph evidence only). Assess this case."
     return llm.parse(SYSTEM, user, Assessment, usage, effort="high")
 
 

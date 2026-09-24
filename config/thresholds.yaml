@@ -1,0 +1,11 @@
+# Investigation loop settings (M5). Policy thresholds (0.85 / 0.15 stop bands, R1 0.70, ...) live in
+# policy_matrix.yaml; these are engineering knobs for the agent itself.
+max_evidence_rounds: 2          # policy-approved evidence requests per case before stopping
+confidence_threshold: 0.60      # deterministic evidence confidence needed to stop on a decisive probability
+# Verdict/probability consistency: a verdict that contradicts its own probability is downgraded to uncertain.
+fraud_min_probability: 0.60
+legit_max_probability: 0.40
+confidence_weights:
+  coverage: 0.4                 # how much of the evidence surface actually returned data
+  agreement: 0.3                # independent signals behind the verdict
+  memory: 0.3                   # do similar prior cases' outcomes agree with the verdict

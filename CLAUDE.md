@@ -52,7 +52,7 @@ flowchart LR
 1. **Graph for facts, rules for scores, LLM for reasoning.** Pattern detectors are GSQL; risk/confidence is Python; LLM picks tools, synthesises, explains.
 2. **Uncertainty is explicit.** `confidence = f(evidence coverage, signal agreement, similar-case outcome agreement)`. Low confidence → request evidence, not guess.
 3. **Two NBA snapshots per case**: `next_best_actions.initial` (before requested evidence) and `.final` (after the assumed responses), each action with its route (`auto` | `L1` | `L2`) and cited rule, plus `what_changed`. (Required by submission.)
-4. **Stop criteria**: confidence ≥ threshold, OR no policy-approved evidence action left, OR max rounds hit. Stop reason recorded.
+4. **Stop criteria** (`agent/workflow.py`, knobs in `config/thresholds.yaml`): decisive p (≥0.85 / ≤0.15) with ≥2 independent signals AND deterministic confidence ≥ threshold, OR a verification reply settled it, OR no new policy-approved request remains, OR max rounds hit. Stop reason recorded. Replies come from `agent/tools/evidence_sources.py`, a simulator separate from the assessor (README §5).
 5. **Every step appends to the case record** (evidence, finding, decision, action, timestamp, actor). Case written to graph at each stage.
 
 ---
@@ -101,7 +101,8 @@ All in `graph/queries/`, installed with `python -m graph.setup --queries`, calle
 | `similar_cases(card, as_of, device_since)` | Structural memory: ClosedCases on same customer / connected card / shared (non-popular) device, tagged `why` |
 | `case_vector_search(qv, k)` | ClosedCase by `notes_emb` similarity (weak for templated risk-score alerts; use as a secondary signal) |
 | `policy_search(qv, k)` | GraphRAG over `PolicyChunk.emb` + linked patterns |
-| `upsert_case`, `add_evidence`, `add_action` | Write-back (M4) |
+| `agent_case_memory(card, as_of, device_since)` | The agent's own earlier `AgentCase` write-backs (same customer / connected card / rare device), `opened_at < as_of` |
+| `link_case(case_vid, …)` | Write-back: edges from an `AgentCase` to card, txns, connected cards, similar ClosedCases, pattern, devices (vertex + `summary_emb` via MCP `upsert_vectors`) |
 
 **Pattern detection** runs in Python (`agent/scoring.py`) over these outputs rather than as 5 GSQL queries: tuning against the 20 cases needs fast iteration, and each GSQL change costs a ~1 min reinstall.
 

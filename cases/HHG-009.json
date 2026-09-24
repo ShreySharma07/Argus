@@ -1,19 +1,31 @@
 {
   "case_id": "HHG-009",
   "case": {
-    "status": "closed_legitimate",
-    "verdict": "legitimate",
-    "fraud_probability": 0.1,
-    "pattern": "none",
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.72,
+    "pattern": "card_not_present_fraud",
     "pattern_description": "",
-    "affected_txn_ids": [],
-    "first_suspicious_txn_id": "",
+    "affected_txn_ids": [
+      "3581141"
+    ],
+    "first_suspicious_txn_id": "3581141",
     "connected_card_ids": [],
     "connected_device_profiles": [],
-    "exposure_usd": 0,
+    "exposure_usd": 30.02,
     "evidence": [
       {
-        "claim": "Flagged txn 3581141 is $30.02 online, product S, region 203 \u2014 amount is 0.45x the card's 180d mean of $65.98 (z = -0.54), far below the card max of $343.94; channel share 87% online and product share 85% S in history.",
+        "claim": "Cardholder C08299 denies the flagged $30.02 charge 3581141 and also the three earlier identical $30.02 charges, states they have no subscription or recurring service billing that amount, and confirms no one else has access to the card or account; they request all four be disputed and the card reissued.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "C08299",
+          "C08299-K1",
+          "3581141"
+        ]
+      },
+      {
+        "claim": "Four charges of exactly $30.02 exist on this card (3342487, 3381749, 3545489, 3581141) with day gaps of 13 and 56 across 2016-10 and 2016-12; looks_monthly = false, so the amount repetition does not match any genuine monthly billing cadence and cannot be explained as a recurring merchant.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -22,7 +34,7 @@
         ]
       },
       {
-        "claim": "Device on the flagged txn ('unknown | unknown | unknown | unknown') is already in the card's history (5 prior txns), device_new_flag = 'Found', new_device_for_card = false, new_region_for_card = false, no proxy.",
+        "claim": "The flagged transaction is low-signal by model standards: risk_score 0.28, amount_z -0.54, amount 0.45x the 180d mean of $65.98, online/product S matching 87%/85% of history - i.e. deliberately unremarkable charges that would not trip an amount-based rule.",
         "source": "graph",
         "ref": "query:card_profile",
         "entity_ids": [
@@ -31,100 +43,57 @@
         ]
       },
       {
-        "claim": "Three prior transactions of the identical $30.02 amount exist on this card (3342487, 3381749, 3545489) across 2016-10 and 2016-12; the disputed charge repeats the cardholder's own billing pattern even though the cadence is not strictly monthly (gaps 13 and 56 days).",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3581141"
-        ]
-      },
-      {
-        "claim": "Model risk score on the flagged txn is only 0.28, and the only other txn in the episode window (3576079, $80.02, home region 330) scored 0.01 \u2014 no burst, no card-testing run, no just-under-threshold run, no in-person out-of-region activity.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3581141",
-          "3576079"
-        ]
-      },
-      {
-        "claim": "The cards_linked_by_rare_device list is driven by the generic placeholder string 'unknown | unknown | unknown | unknown'; the genuinely rare profiles in the window (unknown|Android|chrome 66.0, Windows 10|firefox 59.0, Windows 10|chrome generic, 9-12 cards each) do not appear anywhere in this card's history, so no shared-origin link is established.",
+        "claim": "No rare-device link supports a ring: the flagged device string is 'unknown | unknown | unknown | unknown', a generic placeholder appearing 5 times in this card's own 180d baseline, and none of the three rare shared device profiles (12-25 cards all-time) appear on the disputed transactions.",
         "source": "graph",
         "ref": "query:shared_devices",
         "entity_ids": [
           "C08299-K1",
-          "C06224-K2",
-          "C04108-K2"
+          "3581141"
         ]
       },
       {
-        "claim": "Region 203 cluster: 71 active cards in 7 days, 7 newcomers, only 1 with prior confirmed fraud (rate 0.14 vs base 0.10) \u2014 and this card is not a newcomer to region 203.",
+        "claim": "Region 203 shows 7 newcomer cards in 7 days with 1 having fraud history (rate 0.14 vs base rate 0.10) - not a meaningful cluster, so \u00a73a's shared-region trigger for a report is not met.",
         "source": "graph",
         "ref": "query:region_newcomers",
         "entity_ids": [
-          "C08299-K1",
           "C07096-K2"
         ]
       },
       {
-        "claim": "Structural memory on device-linked cards is mixed and mostly benign for this shape: 4 of 7 similar cases were cleared after the cardholder confirmed the purchase or travel (CC-0219, CC-0965, CC-0374, CC-0189); the confirmed-fraud ones (CC-1672, CC-0241, CC-0364) all involved devices not previously seen on the account, which is not the situation here.",
+        "claim": "Structurally linked memory shows denials of unrecognised online charges on shared-device cards closing as confirmed fraud (CC-0241 $99.98, CC-1672 $174.92), while the cleared cases in memory all involved the cardholder CONFIRMING the purchase - the opposite of the reply here.",
         "source": "graph",
         "ref": "query:similar_cases",
         "entity_ids": [
-          "CC-0219",
-          "CC-0965",
-          "CC-0374",
-          "CC-0189",
-          "CC-1672",
           "CC-0241",
-          "CC-0364"
+          "CC-1672",
+          "CC-0219",
+          "CC-0189"
         ]
       },
       {
-        "claim": "Semantic memory shows several near-identical $30.02/$30.03 alerts (CC-3362, CC-3050, CC-0796, CC-0624) all closed as cleared after customer contact.",
-        "source": "graph",
-        "ref": "query:case_vector_search",
-        "entity_ids": [
-          "CC-3362",
-          "CC-3050",
-          "CC-0796",
-          "CC-0624"
-        ]
-      },
-      {
-        "claim": "R7 directs CREATE_CASE, VERIFY_WITH_CUSTOMER and WARN_CUSTOMER \u2014 not a block \u2014 when a disputed charge matches the cardholder's own repeating charge pattern; R1 forbids blocking on the single dispute signal at probability below 0.70.",
+        "claim": "Policy R2 applies: customer denies the transaction, so BLOCK_CARD and CREATE_CASE; exposure $120.08 is below $1,000 and there is no shared-device or cross-card link, so no FILE_REPORT.",
         "source": "document",
-        "ref": "policy:R7",
-        "entity_ids": []
-      },
-      {
-        "claim": "Assumed customer reply: the cardholder recognises the recurring merchant after being shown the three earlier identical $30.02 charges and confirms the transaction.",
-        "source": "customer",
-        "ref": "evidence_request:1",
+        "ref": "policy:R2",
         "entity_ids": [
-          "3581141",
-          "C08299"
+          "C08299-K1"
         ]
       }
     ],
     "similar_prior_cases": [
+      "CC-0241",
+      "CC-1672",
       "CC-0219",
-      "CC-0965",
-      "CC-0374",
-      "CC-0189",
-      "CC-3362",
-      "CC-3050",
-      "CC-0796"
+      "CC-3362"
     ],
-    "summary": "Customer C08299 disputes a $30.02 online charge (3581141, 2016-12-28). Every structural attribute of the charge matches the cardholder's own baseline: online product S (87%/85% of history), amount well below mean, a device already seen five times on this card, a region the card has used before, and a model score of just 0.28. Critically, the exact $30.02 amount has been billed three times previously on this card, so the dispute most likely reflects an unrecognised recurring merchant descriptor rather than fraud. The apparent device-ring linkage rests on the generic 'unknown | unknown | unknown | unknown' placeholder and collapses on inspection; none of the genuinely rare device profiles touch this card, and the region 203 newcomer fraud rate (0.14 vs 0.10) is noise. Under R7 and R1 this is a verify-and-warn case, not a block: open a case, contact the customer with the prior identical charges, and leave the card active. Exposure is $30.02, well under the $500/$1,000 thresholds, so no report and no escalation.",
+    "summary": "Cardholder C08299 disputed a $30.02 online charge (3581141, 2016-12-28). My first read treated it as a likely legitimate recurring charge because three earlier charges of exactly $30.02 (3342487, 3381749, 3545489) sit in the card's history. The customer_validation reply eliminates that: the cardholder does not recognise any of the four, has no subscription billing $30.02, and reports sole access to the card. With no benign recurring explanation, four identical low-value, low-scoring online charges on a card whose number appears to have been reused over two months read as card-not-present fraud. Exposure is $120.08. Recommended actions: BLOCK_CARD and CREATE_CASE with reissue; no suspicious activity report, since exposure is under $1,000 and the only device string involved is the generic 'unknown | unknown | unknown | unknown' placeholder already present in the card's own history, not a rare shared profile.",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-009"
   },
   "evidence_requests": [
     {
       "type": "customer_validation",
-      "asked_after_step": 4,
-      "assumed_response": "Customer, shown the three earlier $30.02 charges (3342487, 3381749, 3545489), recognises the recurring merchant/subscription and confirms the 2016-12-28 charge is theirs; they had simply not recognised the billing descriptor."
+      "asked_after_step": 5,
+      "assumed_response": "The cardholder states they do not recognise the three earlier $30.02 charges either and have no subscription or recurring service billing that amount; nobody else has access to the card or account. They ask that all four charges be disputed and the card reissued."
     }
   ],
   "next_best_actions": {
@@ -147,33 +116,28 @@
     ],
     "final": [
       {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denies the transaction; exposure $30.02 <= $2,500 -> L1"
+      },
+      {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R7/\u00a73a: disputed charge; case records the dispute"
-      },
-      {
-        "action": "WARN_CUSTOMER",
-        "route": "auto",
-        "reason": "R7: recurring-charge reminder; do not block"
-      },
-      {
-        "action": "CLOSE_NO_FRAUD",
-        "route": "auto",
-        "reason": "R3: customer recognises the recurring charge"
+        "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
       }
     ],
-    "what_changed": "The assumed customer confirmation that the $30.02 charge is a recognised recurring merchant moved the assessment from 0.27 to 0.10 and settles the dispute as a descriptor misrecognition rather than fraud."
+    "what_changed": "The customer_validation reply destroyed the recurring-charge explanation that drove the earlier legitimate call: the cardholder denies all four $30.02 charges and has no subscription billing that amount, moving the assessment from legitimate p=0.28 to fraud p=0.72."
   },
   "sar": {
     "file": false,
-    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "reason": "Case only, no report: fraud with exposure $30.02 <= $1,000, no shared device/region link and a documented pattern, so no \u00a73a condition holds.",
     "narrative": "",
     "subjects": [],
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "Verdict is legitimate at 0.10 with multiple independent supporting signals (in-history device, in-history region, sub-mean amount, three prior identical charges, low model score) and the verification reply settles the question; further graph steps would not change the decision.",
-  "tool_calls": 10,
-  "tokens": 17065,
-  "latency_s": 54.9
+  "stop_reason": "Verification settled the question: customer_validation -> denies (policy \u00a76). The verification response settles the question under policy \u00a76: the cardholder's denial of the whole $30.02 series, plus the absence of any monthly cadence, is decisive for a BLOCK_CARD/CREATE_CASE outcome, and no further request could change it.",
+  "tool_calls": 11,
+  "tokens": 37241,
+  "latency_s": 90.2
 }

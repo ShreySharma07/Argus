@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.1,
+    "fraud_probability": 0.06,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -13,7 +13,18 @@
     "exposure_usd": 0,
     "evidence": [
       {
-        "claim": "Flagged txn 3514030 is $77.07, only 0.66x the card's 180-day mean of $117.02 (z = -0.34) and far below its $845.01 max, so the amount is unremarkable.",
+        "claim": "The cardholder confirmed the $77.07 card-present purchase in region 444 on 2016-12-04 and also confirmed the purchases in regions 485 and 203, stating they were running errands in the area.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3514030",
+          "3512936",
+          "3513814",
+          "C12382"
+        ]
+      },
+      {
+        "claim": "Region 444 is not new for this card: 10 prior transactions in that region in the 180-day baseline, new_region_for_card = false, so the out_of_region_use (clone) pattern does not apply.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -22,7 +33,7 @@
         ]
       },
       {
-        "claim": "Channel and product match the baseline: 356 of 358 transactions (99.4%) are in_person product W, and the flagged txn is in_person product W with no device, proxy or email attached.",
+        "claim": "Amount $77.07 is 0.66x the card's 180-day mean of $117.02 (z = -0.34), well under the $845.01 max across 358 transactions; channel in_person and product W each cover 99.4% of history.",
         "source": "graph",
         "ref": "query:card_profile",
         "entity_ids": [
@@ -31,16 +42,7 @@
         ]
       },
       {
-        "claim": "Region 444 is not new for this card: new_region_for_card = false with 10 prior transactions in that region, which rules out the out_of_region_use clone signature.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3514030",
-          "C12382-K1"
-        ]
-      },
-      {
-        "claim": "The 48-hour window holds nine card-present W purchases (3510115, 3510225, 3510464, 3510612, 3511596, 3512936, 3513814, 3514030, 3514461) across the cardholder's habitual regions with risk scores 0.04-0.30 and home_activity_within_48h = 9; no online transactions, no card-testing run, no just-under-$500 run.",
+        "claim": "All 9 transactions in the 3-4 December window are card-present product W in familiar regions (433, 204, 191, 485, 203, 444); 0 online transactions, no card-testing runs, no just-under-$500 runs, no new device and no proxy.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -51,68 +53,57 @@
           "3511596",
           "3512936",
           "3513814",
+          "3514030",
           "3514461"
         ]
       },
       {
-        "claim": "No rare shared device profile and no cards linked by device: rare_shared_devices and cards_linked_by_rare_device are both empty, and the flagged txn has no device record at all.",
+        "claim": "No rare shared device profiles and no cards linked by a rare device for this card (rare_shared_devices_total = 0), so no shared-origin ring evidence.",
         "source": "graph",
         "ref": "query:shared_devices",
         "entity_ids": [
-          "C12382-K1",
-          "3514030"
+          "C12382-K1"
         ]
       },
       {
-        "claim": "Region 444 shows an anomalous 7-day cluster (41 active cards, 8 newcomers, 6 of them with confirmed-fraud history, 0.75 vs 0.10 base rate), but C12382-K1 is an established user of 444, so the cluster is regional context rather than a link to this transaction.",
+        "claim": "Region 444 shows 8 newcomer cards in 7 days with 6 having confirmed fraud history (75% vs 10% base rate), but C12382-K1 is not among the newcomers, so the cluster does not implicate this card.",
         "source": "graph",
         "ref": "query:region_newcomers",
         "entity_ids": [
-          "C11201-K1",
-          "C00768-K2",
-          "C11965-K1",
-          "C12634-K1",
           "C05289-K2",
-          "C09092-K1"
+          "C00768-K2",
+          "C11201-K1",
+          "C11965-K1",
+          "C09092-K1",
+          "C12634-K1"
         ]
       },
       {
-        "claim": "This card has four prior confirmed-fraud closed cases (CC-1066 $170.98, CC-3587 $49.09, CC-2964 $171.08 out_of_region_use; CC-1673 $199.98 card_not_present_new_device), each a single isolated transaction - a raised prior for this account, but none matches the current profile of in-region card-present activity.",
+        "claim": "Prior confirmed-fraud cases on this same card all involved a genuinely new billing region (CC-1066, CC-3587, CC-2964) or a new online device (CC-1673); neither condition holds for transaction 3514030.",
         "source": "graph",
         "ref": "query:similar_cases",
         "entity_ids": [
           "CC-1066",
           "CC-3587",
           "CC-2964",
-          "CC-1673"
+          "CC-1673",
+          "C12382-K1"
         ]
       },
       {
-        "claim": "The five nearest closed cases by analyst-note similarity (0.835-0.838) are all high-score region alerts the cardholder confirmed as their own and were cleared, supporting a confirmation outcome here.",
+        "claim": "Semantically similar closed cases with high model scores on familiar regional activity were cleared after the cardholder confirmed (CC-4349 at 0.93, CC-1149 at 0.82).",
         "source": "graph",
         "ref": "query:case_vector_search",
         "entity_ids": [
           "CC-4349",
-          "CC-2037",
-          "CC-0601",
-          "CC-4475",
           "CC-1149"
         ]
       },
       {
-        "claim": "R1 requires verification rather than a block when the case rests on a single signal and probability is below 0.70; exposure of $77.07 is also below the $500 escalation threshold of R8.",
+        "claim": "Policy R3 directs CLOSE_NO_FRAUD when the customer confirms the transaction, with the confirmation noted in the case file.",
         "source": "document",
-        "ref": "policy:R1",
+        "ref": "policy:R3",
         "entity_ids": []
-      },
-      {
-        "claim": "Assumed reply: customer confirms the $77.07 purchase in region 444 and the surrounding same-day activity.",
-        "source": "customer",
-        "ref": "evidence_request:1",
-        "entity_ids": [
-          "3514030",
-          "C12382-K1"
-        ]
       }
     ],
     "similar_prior_cases": [
@@ -121,19 +112,17 @@
       "CC-2964",
       "CC-1673",
       "CC-4349",
-      "CC-2037",
-      "CC-0601",
       "CC-1149"
     ],
-    "summary": "Alert HHG-001 is a pure model-score trigger: $77.07 card-present, product W, in billing region 444 on card C12382-K1. Nothing structural supports fraud - the amount is 0.66x the card's mean, channel and product match 99.4% of 358 historical transactions, region 444 already carries 10 prior transactions for this card, and the flagged purchase sits inside a normal two-day run of nine in-person purchases across the cardholder's usual regions with scores of 0.04-0.30. No device or online exposure exists (no device on the txn, no rare shared device, zero online txns in the episode). The card's four prior confirmed-fraud cases and the odd newcomer-fraud cluster in region 444 (0.75 vs 0.10 base rate) justified a quick check, but this card is an established user of 444, not a newcomer. Initial action under R1 was VERIFY_WITH_CUSTOMER plus CREATE_CASE; on the assumed confirmation the recommendation becomes CLOSE_NO_FRAUD under R3, with the region 444 newcomer cohort (C11201-K1, C00768-K2, C11965-K1, C12634-K1, C05289-K2, C09092-K1) left to the separate regional monitoring already implied by R6 - no report is warranted for this card at $77 exposure.",
+    "summary": "Alert HHG-001 was raised purely by a 0.61 model score on transaction 3514030 ($77.07, card-present, region 444). Every structural signal points to normal behaviour for card C12382-K1: the amount is below the card's mean, the channel and product match 99.4% of 358 baseline transactions, and region 444 already carries 10 prior transactions on this card, so this is not out-of-region use. The 3-4 December window is an unbroken sequence of ordinary in-person purchases in the cardholder's usual regions with no online activity, no new device, and no rare shared device links. The cardholder has confirmed the flagged purchase and the neighbouring ones. Under policy R3 the alert should be closed as no fraud, with the confirmation recorded; the region 444 newcomer cluster is noted but does not involve this card.",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-001"
   },
   "evidence_requests": [
     {
       "type": "customer_validation",
-      "asked_after_step": 4,
-      "assumed_response": "Customer confirms they made the $77.07 card-present purchase in billing region 444 on 2016-12-04 and recognises the surrounding purchases that day."
+      "asked_after_step": 5,
+      "assumed_response": "The cardholder confirmed the $77.07 card-present purchase in region 444 on 4 December, stating they were in the area running errands that day and also made the other purchases in regions 485 and 203, which fits their usual in-person spending pattern."
     }
   ],
   "next_best_actions": {
@@ -161,7 +150,7 @@
         "reason": "R3: close the alert as legitimate and note the confirmation"
       }
     ],
-    "what_changed": "The assumed customer confirmation removed the only open question and moved fraud probability from 0.30 to 0.10, converting the recommendation from VERIFY_WITH_CUSTOMER to CLOSE_NO_FRAUD under R3."
+    "what_changed": "The cardholder's confirmation of the $77.07 region-444 purchase and the adjacent region 485 and 203 purchases removed the last residual doubt, moving the assessment from legitimate at 0.30 to legitimate at 0.06 and triggering R3 (CLOSE_NO_FRAUD) instead of continued monitoring."
   },
   "sar": {
     "file": false,
@@ -171,8 +160,8 @@
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "Verification response settles the question; with the amount, channel, product and region all inside baseline and no device or ring link, further steps could not change the decision (\u00a76).",
-  "tool_calls": 9,
-  "tokens": 14291,
-  "latency_s": 57.2
+  "stop_reason": "Decisive: p=0.06 with 4 independent signals and evidence confidence 0.70 (policy \u00a76). A verification response settled the question: the cardholder confirmed the transaction, and probability is at or below 0.15 with at least two independent supporting pieces of evidence (region history on the card, baseline-consistent amount/channel/product, absence of device or ring links). Further steps could not change the decision.",
+  "tool_calls": 10,
+  "tokens": 30709,
+  "latency_s": 84.0
 }

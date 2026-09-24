@@ -1,28 +1,31 @@
 {
   "case_id": "HHG-002",
   "case": {
-    "status": "closed_legitimate",
-    "verdict": "legitimate",
-    "fraud_probability": 0.14,
-    "pattern": "none",
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.88,
+    "pattern": "card_not_present_fraud",
     "pattern_description": "",
-    "affected_txn_ids": [],
-    "first_suspicious_txn_id": "",
+    "affected_txn_ids": [
+      "3478782"
+    ],
+    "first_suspicious_txn_id": "3478782",
     "connected_card_ids": [],
     "connected_device_profiles": [],
-    "exposure_usd": 0,
+    "exposure_usd": 292.36,
     "evidence": [
       {
-        "claim": "Flagged txn 3478782 is $292.36, 6.55x the card's 180-day mean of $44.66 and above its historical max of $121.32 (amount z = 9.8) - the only genuinely anomalous attribute.",
-        "source": "graph",
-        "ref": "query:card_activity",
+        "claim": "Cardholder C11891 denies the $292.36 charge (txn 3478782), states their online purchases are typically under $50, and does not recognise the hotmail.com address on the transaction; they asked for the card to be blocked.",
+        "source": "customer",
+        "ref": "evidence_request:1",
         "entity_ids": [
           "3478782",
+          "C11891",
           "C11891-K1"
         ]
       },
       {
-        "claim": "Channel and product match the baseline perfectly: 35/35 prior transactions were online, product C (channel_share 1.0, product_share 1.0); the transaction is not on a new device or in a new region for the card.",
+        "claim": "Flagged amount $292.36 is 6.55x the 180-day mean of $44.66 and exceeds the card's all-time maximum of $121.32 (amount z ~9.8) across 35 baseline transactions.",
         "source": "graph",
         "ref": "query:card_profile",
         "entity_ids": [
@@ -31,27 +34,7 @@
         ]
       },
       {
-        "claim": "No burst or sequence: the episode window contains exactly one transaction, with no card-testing run (<$5 authorizations) and no just-under-$500 run, so patterns 1, 2 and 3 are not supported.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3478782"
-        ]
-      },
-      {
-        "claim": "The shared device profile 'Trident/7.0 | unknown | ie 11.0 for tablet | unknown' appears on 46 cards all-time (14 in window) and is this cardholder's own habitual device (8 of 35 baseline txns), so it is a common user-agent string, not a rare ring identifier; the flagged txn carries no device record at all.",
-        "source": "graph",
-        "ref": "query:shared_devices",
-        "entity_ids": [
-          "C11891-K1",
-          "C11923-K2",
-          "C05031-K2",
-          "C11509-K2",
-          "C13171-K2"
-        ]
-      },
-      {
-        "claim": "Prior confirmed fraud on this same card: CC-4160, one online transaction of $90.54 on 2016-09-29, closed as card_not_present_fraud - evidence the number has been exposed before, but of a much smaller and differently-shaped episode.",
+        "claim": "Prior closed case CC-4160 on the same card C11891-K1 was confirmed CNP fraud ($90.54, 2016-09-29), showing this card number has been compromised before and reported by the same cardholder.",
         "source": "graph",
         "ref": "query:similar_cases",
         "entity_ids": [
@@ -60,50 +43,48 @@
         ]
       },
       {
-        "claim": "Five semantically near-identical closed cases (similarity 0.80-0.81) all involved a high model score on an unusually large amount and were cleared after the cardholder confirmed the purchase.",
+        "claim": "The real-time model scored txn 3478782 at 0.79; a score alone is only a reason to look, but it is consistent with the other signals here.",
         "source": "graph",
-        "ref": "query:case_vector_search",
+        "ref": "query:card_activity",
         "entity_ids": [
-          "CC-2537",
-          "CC-3639",
-          "CC-4158",
-          "CC-2283",
-          "CC-4208"
+          "3478782"
         ]
       },
       {
-        "claim": "R1 requires verification rather than a block when a single signal carries the case and probability is below 0.70.",
-        "source": "document",
-        "ref": "policy:R1",
-        "entity_ids": []
+        "claim": "Device profile 'Trident/7.0 | unknown | ie 11.0 for tablet | unknown' appears on 46 cards all-time / 14 in window, including cards C11923-K2, C05031-K2, C11509-K2, C13171-K2 with many confirmed CNP/card-testing cases; however it is also 8 of this card's own 35 baseline transactions, so it is treated as a common browser string, not a shared-origin link.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C11923-K2",
+          "C05031-K2",
+          "C11509-K2",
+          "C13171-K2",
+          "C11891-K1"
+        ]
       },
       {
-        "claim": "Cardholder confirms the $292.36 purchase; under R3 the alert closes as no fraud with the confirmation recorded.",
-        "source": "customer",
-        "ref": "evidence_request:1",
+        "claim": "Policy R2: when the customer denies the transaction, block the card and create a case; exposure of $292.36 is below the $1,000 reporting threshold and no genuine shared-origin link is established, so no regulatory report is required.",
+        "source": "document",
+        "ref": "policy:R2",
         "entity_ids": [
-          "3478782",
-          "C11891-K1"
+          "3478782"
         ]
       }
     ],
     "similar_prior_cases": [
       "CC-4160",
       "CC-2537",
-      "CC-3639",
-      "CC-4158",
-      "CC-2283",
-      "CC-4208"
+      "CC-4158"
     ],
-    "summary": "A single $292.36 online purchase on C11891-K1 scored 0.79 because it is 6.55x the card's mean and above its all-time max. Every other attribute is in-pattern: the card is online-only, product C only, the device and region are not new, and there is no surrounding burst or testing sequence. The device-sharing links to four heavily-defrauded cards rest on a generic IE-tablet user-agent seen on 46 cards all-time that is also this cardholder's own regular device, so they do not establish a shared origin. The card does have one small prior confirmed CNP fraud (CC-4160, $90.54), which justified caution but not a block on one signal. Under R1 the initial action was VERIFY_WITH_CUSTOMER; the cardholder confirmed the purchase, so under R3 the case closes as no fraud, consistent with five closely analogous cleared cases.",
+    "summary": "Transaction 3478782 ($292.36, online, product C) on card C11891-K1 is 6.55x the cardholder's 180-day mean and above their all-time card maximum, on an account whose normal activity is 35 small online purchases averaging $44.66. The cardholder was asked to validate and denies the charge, saying the amount and the hotmail.com address are not theirs. The same card already carries a confirmed CNP fraud case (CC-4160, $90.54, September 2016), indicating repeat exposure of the number. The rare-device link to heavily fraud-affected cards is discounted because that browser string is part of this card's own routine history and appears on 46 cards all-time. Single-transaction card-not-present fraud: block the card, create a case, reverse the charge; exposure $292.36 is under the reporting threshold and no coordinated origin is proven, so no SAR.",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-002"
   },
   "evidence_requests": [
     {
       "type": "customer_validation",
-      "asked_after_step": 4,
-      "assumed_response": "Customer confirms they made the $292.36 online purchase on 2016-11-22 and recognises the merchant."
+      "asked_after_step": 5,
+      "assumed_response": "The cardholder does not recognize the $292.36 charge and denies making it, noting it is far larger than anything they normally spend online (their purchases are typically under $50) and that the hotmail.com address is not theirs. They requested the card be blocked and the charge reversed."
     }
   ],
   "next_best_actions": {
@@ -111,7 +92,7 @@
       {
         "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "R1: p=0.42 is not decisive; verify before any block"
+        "reason": "R1: p=0.45 is not decisive; verify before any block"
       },
       {
         "action": "CREATE_CASE",
@@ -121,28 +102,28 @@
     ],
     "final": [
       {
-        "action": "ALLOW_TRANSACTION",
-        "route": "auto",
-        "reason": "R3: activity is the cardholder's own; let the transaction stand"
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denies the transaction; exposure $292.36 <= $2,500 -> L1"
       },
       {
-        "action": "CLOSE_NO_FRAUD",
+        "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R3: close the alert as legitimate and note the confirmation"
+        "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
       }
     ],
-    "what_changed": "Assessment moved from uncertain (0.42) to legitimate (0.14) once the cardholder confirmed the purchase; the initial VERIFY_WITH_CUSTOMER recommendation becomes CLOSE_NO_FRAUD with the case retained for the record."
+    "what_changed": "The customer validation reply came back as a denial, converting a single-signal anomaly (probability 0.45) into confirmed card-not-present fraud at 0.88 under policy R2."
   },
   "sar": {
     "file": false,
-    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "reason": "Case only, no report: fraud with exposure $292.36 <= $1,000, no shared device/region link and a documented pattern, so no \u00a73a condition holds.",
     "narrative": "",
     "subjects": [],
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "A verification response settled the question: the cardholder confirmed the only anomalous transaction, and with no burst, no new device or region and no credible shared-origin link, further steps would not change the decision.",
-  "tool_calls": 8,
-  "tokens": 13329,
-  "latency_s": 65.8
+  "stop_reason": "Decisive: p=0.88 with 4 independent signals and evidence confidence 0.94 (policy \u00a76). A verification response settled the question: the cardholder denies the charge, and with the amount anomaly and the prior confirmed fraud on this card the evidence exceeds 0.85 on at least two independent signals. Further steps would not change the decision.",
+  "tool_calls": 9,
+  "tokens": 28593,
+  "latency_s": 79.6
 }

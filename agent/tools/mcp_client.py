@@ -58,7 +58,7 @@ ALLOWED_TOOLS = frozenset({
 ALLOWED_QUERIES = frozenset({
     "card_profile", "card_activity", "shared_devices", "region_newcomers",
     "similar_cases", "case_vector_search", "policy_search",
-    "link_case",  # write-back: Case vertex itself is upserted via upsert_vectors
+    "agent_case_memory", "link_case",  # agent memory read + write-back: Case vertex itself is upserted via upsert_vectors
 })
 ALLOWED_QUERY_PREFIXES = ("pattern_",)
 

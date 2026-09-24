@@ -62,6 +62,10 @@ class GraphTools:
         r = await self.query("similar_cases", card=card, as_of=as_of, device_since=device_since)
         return _rows(r[0]["cases"], "A.")
 
+    async def agent_case_memory(self, card: str, as_of: str, device_since: str) -> list[dict]:
+        r = await self.query("agent_case_memory", card=card, as_of=as_of, device_since=device_since)
+        return _rows(r[0]["cases"], "A.")
+
     async def case_vector_search(self, qv: list[float], k: int = 5) -> list[dict]:
         r = await self.query("case_vector_search", qv=qv, k=k)
         dist = r[1]["distances"]
