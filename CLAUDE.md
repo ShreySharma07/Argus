@@ -3,8 +3,8 @@
 Hackathon build. Deadline: Sept 24, 2026, 11:59 PM IST. Team of 2.
 **Rule #1: all 20 benchmark answer files must exist end-to-end by hour ~20. Polish after.**
 
-> Anything marked `TBD-README` depends on the dataset README (columns, case format,
-> answer format, how "additional evidence" is supplied). Do not invent these; ask.
+> The dataset README (`$DATA_DIR/README.md`) is the spec: columns, the 20 cases, the
+> Fraud Policy (actions, routes, R1–R10) and the answer format. Read it; don't invent.
 
 ---
 
@@ -30,7 +30,7 @@ flowchart LR
   AG <--> ACT[mock action API<br/>freeze, step-up, notify]
   MCP <--> TG[(TigerGraph Savanna<br/>graph + vectors)]
   MEM --> TG
-  AG --> ANS[answers/*.json]
+  AG --> ANS[cases/*.json]
   UI[Streamlit analyst UI] <--> AG
 ```
 
@@ -51,26 +51,40 @@ flowchart LR
 ### Core design decisions
 1. **Graph for facts, rules for scores, LLM for reasoning.** Pattern detectors are GSQL; risk/confidence is Python; LLM picks tools, synthesises, explains.
 2. **Uncertainty is explicit.** `confidence = f(evidence coverage, signal agreement, similar-case outcome agreement)`. Low confidence → request evidence, not guess.
-3. **Two NBA snapshots per case**: `nba_before_evidence` and `nba_after_evidence`, each with approval route. (Required by submission.)
+3. **Two NBA snapshots per case**: `next_best_actions.initial` (before requested evidence) and `.final` (after the assumed responses), each action with its route (`auto` | `L1` | `L2`) and cited rule, plus `what_changed`. (Required by submission.)
 4. **Stop criteria**: confidence ≥ threshold, OR no policy-approved evidence action left, OR max rounds hit. Stop reason recorded.
 5. **Every step appends to the case record** (evidence, finding, decision, action, timestamp, actor). Case written to graph at each stage.
 
 ---
 
-## 2. Graph schema (PROVISIONAL — finalise after README)
+## 2. Graph schema (graph `FraudGraph`, loaded)
 
-**Entity vertices:** `Customer`, `Card`, `Transaction`, `Device`, `IP/Connection`, `EmailDomain`, `Address`
-**Case/memory vertices:** `Case`, `Evidence`, `Finding`, `Action`, `Decision`, `SAR`
-**Knowledge vertices:** `FraudPattern` (5 known + discovered), `PolicyChunk` (vector), `Regulation`
+Files: `graph/schema.gsql` (entities + prior cases), `graph/schema_knowledge.gsql` (GraphRAG).
 
-**Edges (examples):**
-- `Customer -OWNS-> Card`, `Card -MADE-> Transaction`
-- `Transaction -USED_DEVICE-> Device`, `-FROM_IP->`, `-PURCHASER_EMAIL->`, `-BILLING_ADDR->`
-- `Case -ABOUT-> Customer|Transaction`, `Case -HAS_EVIDENCE-> Evidence`, `Case -HAS_ACTION-> Action`
-- `Case -MATCHES-> FraudPattern`, `Case -SIMILAR_TO-> Case`
-- `PolicyChunk -DESCRIBES-> FraudPattern`, `PolicyChunk -CITES-> Regulation`
+**Entity vertices (M1, loaded):**
+| Vertex | ID | Notes |
+|---|---|---|
+| `Customer` | `C01234` | = `card1` (1:1) |
+| `Card` | `C01234-K1` | Not a dataset column. Derived per customer from distinct (`card4`, `card6`): blank pair first, then sorted; n-th = `-K<n>`. Reproduces every card_id in closed cases + case pack |
+| `Transaction` | `TransactionID` | ts, amount, product_cd, channel, risk_score, card_id, addr1/2, dist1/2, emails, C1–C14, D1–D15, M1–M9, identity fields (id_01–11 numeric, readable id_12…id_38, device_type). V1–V339 not loaded. **Missing numerics = -999** |
+| `DeviceProfile` | `DeviceInfo \| OS \| browser \| screen` | Answer-file format for `connected_device_profiles`; missing parts = `unknown` |
+| `EmailDomain`, `BillingRegion` | domain / `addr1` code (`444`) | |
 
-**Vector attributes:** `Case.summary_emb`, `PolicyChunk.emb`
+**Prior-case memory (Option B: separate types):**
+- `ClosedCase` — the 5,565 rows of `closed_cases_history.csv` (schema created in M1, loaded in M3)
+- `Case` (+ `Evidence`, `Action`) — cases the agent writes; added with M3/M4 write-back
+
+**Knowledge (M2, loaded):** `PolicyChunk` (vector `emb`, 384-d cosine, bge-small), `FraudPattern` (5 known + `undocumented`)
+
+**Edges (all have reverse edges):**
+- `Customer -OWNS-> Card -MADE-> Transaction`, `Transaction -NEXT(gap_s)-> Transaction` (per card, by time)
+- `Transaction -FROM_DEVICE-> DeviceProfile`, `-PURCHASER_EMAIL->`/`-RECIPIENT_EMAIL-> EmailDomain`, `-BILLED_IN-> BillingRegion`
+- `ClosedCase -INVOLVES-> Transaction`, `-ON_CARD-> Card`, `-CONNECTED_TO-> Card`, `-MATCHES-> FraudPattern`
+- `PolicyChunk -DESCRIBES-> FraudPattern`
+
+**Loaded counts:** Customer 13,553 · Card 14,318 · Transaction 590,742 · DeviceProfile 9,706 · EmailDomain 60 · BillingRegion 332 · MADE 590,742 · NEXT 576,424 · FROM_DEVICE 144,432 · BILLED_IN 525,003 · PURCHASER_EMAIL 496,262 · RECIPIENT_EMAIL 137,453 · PolicyChunk 832
+
+**Rebuild:** `python -m etl.prepare && python -m graph.setup && python -m etl.load` (load verifies counts). Knowledge: `python -m etl.ingest_docs --setup --load`.
 
 ---
 
@@ -84,9 +98,10 @@ flowchart LR
 | `velocity_window` | Txn bursts, new-device + high-amount, time anomalies |
 | `ring_detect` | WCC / Louvain on card–device–email subgraph → ring size, fraud density |
 | `entity_centrality` | PageRank on suspicious subgraph |
-| `pattern_<name>` ×5 | One detector per documented pattern (TBD-README) |
+| `pattern_<name>` ×5 | One detector per documented pattern: card_testing, card_not_present_fraud, card_not_present_new_device, out_of_region_use, account_takeover |
 | `similar_cases` | Prior cases sharing entities/pattern + outcome |
 | `upsert_case`, `add_evidence`, `add_action` | Write-back |
+| `policy_search(qv, k)` | GraphRAG: vectorSearch over `PolicyChunk.emb` + linked patterns (installed) |
 
 ---
 
@@ -128,17 +143,17 @@ fraud-agent/
 │   ├── tools/
 │   │   ├── mcp_client.py      # tigergraph-mcp with allowlist
 │   │   ├── actions.py         # mock action APIs
-│   │   └── evidence_sources.py# simulated customer/analyst responses (TBD-README)
+│   │   └── evidence_sources.py# simulated customer/analyst responses (README §5: assumed, recorded in evidence_requests)
 │   ├── scoring.py             # risk + confidence
 │   ├── rag.py                 # GraphRAG retrieval + context builder
 │   ├── llm.py                 # provider wrapper
 │   └── prompts/*.md
 ├── runner/
-│   ├── run_benchmark.py       # 20 cases -> answers/
+│   ├── run_benchmark.py       # 20 cases -> cases/
 │   └── validate_answers.py    # checks against required answer format
 ├── ui/
 │   └── app.py                 # Streamlit
-├── answers/                   # submission output
+├── cases/                     # submission output: <case_id>.json (README Answer Format)
 ├── docs/
 │   └── blog.md
 └── tests/
@@ -164,7 +179,7 @@ fraud-agent/
 
 ## 6. Working rules for Claude Code
 - Work one milestone at a time; don't scaffold files for later milestones.
-- Never guess dataset columns or answer format; read `data/README*` first.
+- Never guess dataset columns or answer format; read `$DATA_DIR/README.md` first.
 - Keep LLM calls out of ETL and scoring.
 - The agent must never call MCP tools outside the allowlist in `agent/tools/mcp_client.py`.
 - Every node reads and returns `CaseState`; every node appends to `case.timeline`.

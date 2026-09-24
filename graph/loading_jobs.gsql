@@ -1,0 +1,25 @@
+USE GRAPH FraudGraph
+CREATE LOADING JOB load_entities FOR GRAPH FraudGraph {
+  DEFINE FILENAME customers;
+  DEFINE FILENAME cards;
+  DEFINE FILENAME devices;
+  DEFINE FILENAME emails;
+  DEFINE FILENAME regions;
+  DEFINE FILENAME txns;
+  DEFINE FILENAME txn_device;
+  DEFINE FILENAME txn_next;
+
+  LOAD customers TO VERTEX Customer VALUES ($0) USING header="false", separator="\t", eol="\n";
+  LOAD cards TO VERTEX Card VALUES ($0, $1, $2, $3),
+             TO EDGE OWNS VALUES ($1, $0) USING header="false", separator="\t", eol="\n";
+  LOAD devices TO VERTEX DeviceProfile VALUES ($0, $1, $2, $3, $4) USING header="false", separator="\t", eol="\n";
+  LOAD emails TO VERTEX EmailDomain VALUES ($0) USING header="false", separator="\t", eol="\n";
+  LOAD regions TO VERTEX BillingRegion VALUES ($0) USING header="false", separator="\t", eol="\n";
+  LOAD txns TO VERTEX Transaction VALUES ($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79, $80),
+            TO EDGE MADE VALUES ($7, $0),
+            TO EDGE BILLED_IN VALUES ($0, $12) WHERE $12 != "",
+            TO EDGE PURCHASER_EMAIL VALUES ($0, $16) WHERE $16 != "",
+            TO EDGE RECIPIENT_EMAIL VALUES ($0, $17) WHERE $17 != "" USING header="false", separator="\t", eol="\n";
+  LOAD txn_device TO EDGE FROM_DEVICE VALUES ($0, $1) USING header="false", separator="\t", eol="\n";
+  LOAD txn_next TO EDGE NEXT VALUES ($0, $1, $2) USING header="false", separator="\t", eol="\n";
+}

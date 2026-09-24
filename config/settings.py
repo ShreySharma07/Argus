@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
 CONFIG_DIR = ROOT / "config"
-ANSWERS_DIR = ROOT / "answers"
+CASES_DIR = ROOT / "cases"  # submission answer files: cases/<case_id>.json
 DATA_DIR = Path(os.getenv("DATA_DIR", ROOT / "data"))
 
 TG_HOST = os.getenv("TG_HOST", "")
