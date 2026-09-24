@@ -1,0 +1,148 @@
+{
+  "case_id": "HHG-002",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.14,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3478782 is $292.36, 6.55x the card's 180-day mean of $44.66 and above its historical max of $121.32 (amount z = 9.8) - the only genuinely anomalous attribute.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3478782",
+          "C11891-K1"
+        ]
+      },
+      {
+        "claim": "Channel and product match the baseline perfectly: 35/35 prior transactions were online, product C (channel_share 1.0, product_share 1.0); the transaction is not on a new device or in a new region for the card.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C11891-K1",
+          "3478782"
+        ]
+      },
+      {
+        "claim": "No burst or sequence: the episode window contains exactly one transaction, with no card-testing run (<$5 authorizations) and no just-under-$500 run, so patterns 1, 2 and 3 are not supported.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3478782"
+        ]
+      },
+      {
+        "claim": "The shared device profile 'Trident/7.0 | unknown | ie 11.0 for tablet | unknown' appears on 46 cards all-time (14 in window) and is this cardholder's own habitual device (8 of 35 baseline txns), so it is a common user-agent string, not a rare ring identifier; the flagged txn carries no device record at all.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C11891-K1",
+          "C11923-K2",
+          "C05031-K2",
+          "C11509-K2",
+          "C13171-K2"
+        ]
+      },
+      {
+        "claim": "Prior confirmed fraud on this same card: CC-4160, one online transaction of $90.54 on 2016-09-29, closed as card_not_present_fraud - evidence the number has been exposed before, but of a much smaller and differently-shaped episode.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-4160",
+          "C11891-K1"
+        ]
+      },
+      {
+        "claim": "Five semantically near-identical closed cases (similarity 0.80-0.81) all involved a high model score on an unusually large amount and were cleared after the cardholder confirmed the purchase.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-2537",
+          "CC-3639",
+          "CC-4158",
+          "CC-2283",
+          "CC-4208"
+        ]
+      },
+      {
+        "claim": "R1 requires verification rather than a block when a single signal carries the case and probability is below 0.70.",
+        "source": "document",
+        "ref": "policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Cardholder confirms the $292.36 purchase; under R3 the alert closes as no fraud with the confirmation recorded.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3478782",
+          "C11891-K1"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-4160",
+      "CC-2537",
+      "CC-3639",
+      "CC-4158",
+      "CC-2283",
+      "CC-4208"
+    ],
+    "summary": "A single $292.36 online purchase on C11891-K1 scored 0.79 because it is 6.55x the card's mean and above its all-time max. Every other attribute is in-pattern: the card is online-only, product C only, the device and region are not new, and there is no surrounding burst or testing sequence. The device-sharing links to four heavily-defrauded cards rest on a generic IE-tablet user-agent seen on 46 cards all-time that is also this cardholder's own regular device, so they do not establish a shared origin. The card does have one small prior confirmed CNP fraud (CC-4160, $90.54), which justified caution but not a block on one signal. Under R1 the initial action was VERIFY_WITH_CUSTOMER; the cardholder confirmed the purchase, so under R3 the case closes as no fraud, consistent with five closely analogous cleared cases.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-002"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms they made the $292.36 online purchase on 2016-11-22 and recognises the merchant."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: p=0.42 is not decisive; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: a case is opened whenever evidence is requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: activity is the cardholder's own; let the transaction stand"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: close the alert as legitimate and note the confirmation"
+      }
+    ],
+    "what_changed": "Assessment moved from uncertain (0.42) to legitimate (0.14) once the cardholder confirmed the purchase; the initial VERIFY_WITH_CUSTOMER recommendation becomes CLOSE_NO_FRAUD with the case retained for the record."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "A verification response settled the question: the cardholder confirmed the only anomalous transaction, and with no burst, no new device or region and no credible shared-origin link, further steps would not change the decision.",
+  "tool_calls": 8,
+  "tokens": 13329,
+  "latency_s": 65.8
+}

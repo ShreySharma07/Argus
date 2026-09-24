@@ -1,0 +1,184 @@
+{
+  "case_id": "HHG-015",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.87,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3464869"
+    ],
+    "first_suspicious_txn_id": "3464869",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050"
+    ],
+    "exposure_usd": 599.94,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3464869 is $599.94 online, amount_z 3.57, 4.52x the 180d mean of $132.61 and above the card's prior maximum of $550.03.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3464869",
+          "C03042-K1"
+        ]
+      },
+      {
+        "claim": "The transaction came from device 'Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050', absent from the card's history and marked 'New' on the identity record; no proxy recorded.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3464869",
+          "Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050"
+        ]
+      },
+      {
+        "claim": "Billing region 327 has 0 prior transactions on this card (top regions 325/299/330/225/337/387); mitigating context is that the card is already region- and device-diverse (39 distinct devices over 68 txns), which weakens the 'new device' signal on its own.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C03042-K1",
+          "3464869"
+        ]
+      },
+      {
+        "claim": "Two prior confirmed frauds on this same card, CC-3886 ($175.05) and CC-0615 ($174.99), were both card_not_present_new_device \u2014 the same shape as this alert; a third same-customer case CC-1313 was cleared as travel.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-3886",
+          "CC-0615",
+          "CC-1313",
+          "C03042-K1"
+        ]
+      },
+      {
+        "claim": "The rare device profile on the flagged txn has 8 cards all-time but only 1 card in the window, so no shared-origin ring is evidenced; the large confirmed-fraud lists on linked cards (C06224-K2, C11000-K2, C08918-K2) come through 'Windows | Windows 7 | chrome 65.0 | 1280x1024', a common profile (44 cards all-time, 26 in window) that does not appear in this card's history.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050",
+          "Windows | Windows 7 | chrome 65.0 | 1280x1024",
+          "C06224-K2",
+          "C11000-K2",
+          "C08918-K2"
+        ]
+      },
+      {
+        "claim": "Region 327 shows 15 newcomer cards in 7 days, 5 with confirmed fraud history (0.33 vs 0.10 base rate) including C03042-K1 \u2014 mildly elevated but historical, not concurrent confirmed fraud.",
+        "source": "graph",
+        "ref": "query:region_newcomers",
+        "entity_ids": [
+          "C03042-K1",
+          "C13328-K1",
+          "C04861-K2",
+          "C04294-K1",
+          "C08637-K2"
+        ]
+      },
+      {
+        "claim": "The three in-person transactions on 2016-11-16 (3462385 $440.96, 3462387 $550.03, 3462404 $550.01) are in home region 299 with no device or region anomaly and are treated as genuine cardholder activity continuing alongside the online compromise.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3462385",
+          "3462387",
+          "3462404"
+        ]
+      },
+      {
+        "claim": "Semantically similar cleared cases (CC-0489, CC-0969, CC-2037, CC-4197, CC-2956) were all high-score alerts resolved by confirmed travel; that explanation does not transfer here because the flagged item is card-not-present from a new device, not a card-present trip.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-0489",
+          "CC-4197",
+          "CC-2956"
+        ]
+      },
+      {
+        "claim": "Cardholder denies the $599.94 online purchase and the IE/Windows 8.1 device, while confirming the 2016-11-16 in-person purchases.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3464869",
+          "C03042"
+        ]
+      },
+      {
+        "claim": "R2 applies on denial: BLOCK_CARD and CREATE_CASE; exposure $599.94 is below $1,000 and no concurrent shared-device or other-card fraud link is established, so a regulatory report is not required.",
+        "source": "document",
+        "ref": "policy:R2",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-3886",
+      "CC-0615",
+      "CC-1313",
+      "CC-5481",
+      "CC-4197"
+    ],
+    "summary": "Alert on a $599.94 online purchase (txn 3464869) that is 4.5x the card's mean, above its prior maximum, from a device never seen on the account and flagged 'New', in billing region 327 where the card has no history. Home card-present activity continued normally in region 299 the day before, which is consistent with a stolen number rather than a travelling cardholder. The card already has two confirmed card_not_present_new_device frauds (CC-3886, CC-0615), though its 39-device history makes the new-device flag weak in isolation, so I verified before blocking. The cardholder denies the online purchase, taking the assessment to fraud at 0.87. No credible ring link: the flagged device is on one card in the window, and the heavily fraud-laden linked cards connect only through a common browser profile that this card never used.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-015"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Cardholder C03042 states they do not recognize the $599.94 online purchase (txn 3464869) of 2016-11-17 and did not use any Internet Explorer / Windows 8.1 desktop; they confirm the three in-person purchases in region 299 on 2016-11-16 were theirs."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "\u00a75/\u00a76: p=0.58 is not decisive; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: a case is opened whenever evidence is requested"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R1: keep the card active but raise monitoring while verification is pending"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: uncertain with exposure $599.94 > $500"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denies the transaction; exposure $599.94 <= $2,500 -> L1"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
+      }
+    ],
+    "what_changed": "Cardholder denial moved the verdict from uncertain (0.58) to fraud (0.87) and the action from VERIFY_WITH_CUSTOMER to BLOCK_CARD plus CREATE_CASE under R2; no FILE_REPORT since exposure is under $1,000 and no shared-origin link holds."
+  },
+  "sar": {
+    "file": false,
+    "reason": "Case only, no report: fraud with exposure $599.94 <= $1,000, no shared device/region link and a documented pattern, so no \u00a73a condition holds.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Verification settled the question: denial plus amount/device/region anomalies and the card's prior CNP-new-device frauds give >=0.85 on multiple independent signals; further graph steps would not change the decision.",
+  "tool_calls": 9,
+  "tokens": 16620,
+  "latency_s": 64.2
+}

@@ -81,21 +81,12 @@ def _bm25_top(query: str, sources: tuple[str, ...], k: int) -> list[str]:
     return [ids[i] for i in np.argsort(-scores)[:k] if scores[i] > 0]
 
 
-def search(query: str, sources=POLICY_SOURCES, k: int = 3, use_graph: bool | None = None) -> list[dict]:
-    sources = tuple(sources)
-    qv = embed_query(query)
-    if use_graph is None:
-        use_graph = bool(TG_HOST)
-    vec = asyncio.run(_vector_graph(qv, sources, CANDIDATES)) if use_graph else _vector_local(qv, sources, CANDIDATES)
-    kw = _bm25_top(query, sources, CANDIDATES)
-
+def _rank(query: str, vec: list[str], kw: list[str], k: int) -> list[dict]:
     fused: dict[str, float] = {}
     for ranked in (vec, kw):
         for rank, cid in enumerate(ranked):
             fused[cid] = fused.get(cid, 0.0) + 1.0 / (RRF_K + rank + 1)
-    pool = sorted(fused, key=lambda c: -fused[c])[:RERANK_TOP]
-    pool = [c for c in pool if c in _chunks()]
-
+    pool = [c for c in sorted(fused, key=lambda c: -fused[c])[:RERANK_TOP] if c in _chunks()]
     scores = list(_reranker().rerank(query, [f"{_chunks()[c]['title']}. {_chunks()[c]['text']}" for c in pool]))
     out, per_doc = [], {}
     for cid, score in sorted(zip(pool, scores), key=lambda x: -x[1]):
@@ -109,6 +100,23 @@ def search(query: str, sources=POLICY_SOURCES, k: int = 3, use_graph: bool | Non
         if len(out) == k:
             break
     return out
+
+
+def search(query: str, sources=POLICY_SOURCES, k: int = 3, use_graph: bool | None = None) -> list[dict]:
+    sources = tuple(sources)
+    qv = embed_query(query)
+    if use_graph is None:
+        use_graph = bool(TG_HOST)
+    vec = asyncio.run(_vector_graph(qv, sources, CANDIDATES)) if use_graph else _vector_local(qv, sources, CANDIDATES)
+    return _rank(query, vec, _bm25_top(query, sources, CANDIDATES), k)
+
+
+async def asearch(graph, query: str, sources=POLICY_SOURCES, k: int = 3) -> list[dict]:
+    """Same ranking, but the vector step reuses an open GraphTools session (and is counted as a tool call)."""
+    sources = tuple(sources)
+    res = await graph.query("policy_search", qv=embed_query(query), k=CANDIDATES, sources=list(sources))
+    dist = res[1]["distances"]
+    return _rank(query, sorted(dist, key=dist.get), _bm25_top(query, sources, CANDIDATES), k)
 
 
 def search_policy(query: str, k: int = 3, use_graph: bool | None = None) -> list[dict]:

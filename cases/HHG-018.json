@@ -1,0 +1,184 @@
+{
+  "case_id": "HHG-018",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.12,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3491361 is $39.08 in-person, product W, region 126 \u2014 0.28x the card's $141.17 mean (amount_z -0.48), far below the $4,438.01 max; nothing anomalous in size.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3491361",
+          "C02354-K2"
+        ]
+      },
+      {
+        "claim": "Region 126 is the card's second home region with 565 of 5,860 baseline transactions, and the card was used there on eight consecutive days (2016-11-20 through 2016-11-27); new_region_for_card = false.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C02354-K2",
+          "3491361"
+        ]
+      },
+      {
+        "claim": "Channel and product match 91.6% of history (in_person 5,369/5,860; product W 5,369); no device, no proxy and no new-device flag on the flagged transaction.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C02354-K2",
+          "3491361"
+        ]
+      },
+      {
+        "claim": "Recurring analysis shows 29 prior transactions at the same amount on this card (e.g. 3476569, 3482491, 3488986) with day gaps of 0\u20133 days; frequent rather than strictly monthly, but it is the cardholder's own repeated pattern.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3488986",
+          "C02354-K2"
+        ]
+      },
+      {
+        "claim": "No card-testing run and no just-under-$500 run in the episode window; the seven online items are $19.91\u2013$20.05 household-product charges at risk 0.05\u20130.40 on a device already 'Found' for this account.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3484013",
+          "3484024",
+          "3484045"
+        ]
+      },
+      {
+        "claim": "The rare device 'rv:59.0 | Mac OS X 10.13 | firefox 59.0 | 2880x1800' (9 cards all-time, 5 in window) links to C05560-K2 and C03218-K2 with confirmed fraud, but it appears only on two low-value, non-new online items three days before the dispute and not on the disputed card-present charge, so it does not explain txn 3491361.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C05560-K2",
+          "C03218-K2",
+          "3484013",
+          "3484045"
+        ]
+      },
+      {
+        "claim": "Region 126 newcomer cluster shows a fraud-history rate among newcomers of 0.10, identical to the 0.10 base rate \u2014 no regional clustering signal, and this card is not a newcomer there.",
+        "source": "graph",
+        "ref": "query:region_newcomers",
+        "entity_ids": [
+          "C02354-K2"
+        ]
+      },
+      {
+        "claim": "Prior confirmed cases on this same card (CC-0631 out_of_region_use, CC-2051 account_takeover, CC-3537 out_of_region_use) all involved a new billing region or mixed-channel anomalies; none of those markers is present here.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-0631",
+          "CC-2051",
+          "CC-3537",
+          "C02354-K2"
+        ]
+      },
+      {
+        "claim": "Semantically similar closed cases with comparable profiles (small amount, familiar region) were cleared after the cardholder confirmed the purchase or travel.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-5463",
+          "CC-3927",
+          "CC-1399"
+        ]
+      },
+      {
+        "claim": "R1 requires verification rather than a block when the case rests on a single signal and probability is under 0.70; R7 directs CREATE_CASE, VERIFY_WITH_CUSTOMER and WARN_CUSTOMER for a disputed charge matching the cardholder's own pattern.",
+        "source": "document",
+        "ref": "policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Customer confirms on review that the $39.08 charge is one of their regular purchases and withdraws the dispute.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3491361",
+          "C02354"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0631",
+      "CC-2051",
+      "CC-3537",
+      "CC-5463",
+      "CC-3927"
+    ],
+    "summary": "Customer C02354 disputes a $39.08 card-present purchase (3491361) in region 126. Every structural check says routine: the amount is 0.28x the card's mean, region 126 holds 565 prior transactions and the card was used there on all eight days surrounding the alert, the channel/product match 91.6% of history, there is no device or proxy attached, and 29 prior transactions on this card share the same amount. The card does have three prior confirmed-fraud cases, but each hinged on a genuinely new region or mixed-channel anomaly, none of which appears here; the rare Firefox device profile touches only two small, previously-seen online items and not the disputed charge. This looks like a forgotten or household-made recurring purchase rather than fraud. Per R1 and R7, open a case, verify with the customer and warn them \u2014 do not block.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-018"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer, shown the merchant and date, recognises the $39.08 charge as one of their regular purchases in region 126 (made by them or an authorised household user) and withdraws the dispute."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: dispute of a charge matching the cardholder's recurring pattern"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: confirm the recurring merchant/amount with the customer"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: send a recurring-charge reminder; do not block"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7/\u00a73a: disputed charge; case records the dispute"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: recurring-charge reminder; do not block"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: customer recognises the recurring charge"
+      }
+    ],
+    "what_changed": "The assumed customer confirmation resolved the only fraud signal in the file, moving the assessment from 0.25 to 0.12 and from 'likely legitimate' to 'legitimate \u2014 close no fraud'."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Verification settles the question: the single fraud signal was the dispute itself, and with the charge matching the cardholder's own region, channel and repeated amount pattern, further graph work would not change the decision (policy:s6).",
+  "tool_calls": 10,
+  "tokens": 34144,
+  "latency_s": 80.5
+}

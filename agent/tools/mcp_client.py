@@ -58,7 +58,7 @@ ALLOWED_TOOLS = frozenset({
 ALLOWED_QUERIES = frozenset({
     "card_profile", "card_activity", "shared_devices", "region_newcomers",
     "similar_cases", "case_vector_search", "policy_search",
-    "upsert_case", "add_evidence", "add_action",  # write-back (M4)
+    "link_case",  # write-back: Case vertex itself is upserted via upsert_vectors
 })
 ALLOWED_QUERY_PREFIXES = ("pattern_",)
 

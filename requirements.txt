@@ -8,3 +8,4 @@ numpy
 pypdf
 pandas
 rank_bm25
+anthropic>=1.8

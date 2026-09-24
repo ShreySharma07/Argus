@@ -1,0 +1,164 @@
+{
+  "case_id": "HHG-008",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.17,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3558054 is $55.68 against a 180-day mean of $54.02 (amount_z 0.03, 1.03x mean, card max $407.32) \u2014 no amount anomaly.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3558054",
+          "C13171-K2"
+        ]
+      },
+      {
+        "claim": "Card baseline is 899 transactions in 180 days, 898 online / product C (99.9% share); the flagged txn is online product C, exactly in profile.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C13171-K2"
+        ]
+      },
+      {
+        "claim": "Flagged device 'unknown | unknown | chrome 66.0 | unknown' is already in the card's history (device_in_card_history true, device_new_flag 'Found', no proxy); the card has 177 devices all-time so device variety is baseline.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3558054",
+          "C13171-K2"
+        ]
+      },
+      {
+        "claim": "13 prior transactions at the same amount across six distinct months (2016-07 to 2016-12), including 3557979 ($55.60) and 3557987 ($55.69) within 20 minutes of the flagged charge \u2014 a repeating same-amount pattern on this card.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3557979",
+          "3557987",
+          "3558054"
+        ]
+      },
+      {
+        "claim": "No card-testing run and no just-under-$500 run in the 19-transaction window; no new region, no in-person activity, model score only 0.38.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "C13171-K2",
+          "3558054"
+        ]
+      },
+      {
+        "claim": "Three prior confirmed frauds on this same card (CC-1715 $553.72, CC-3566 $88.07, CC-3422 $124.24) all involved new devices or out-of-profile online merchants \u2014 context that raises suspicion but does not match this in-profile charge.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-1715",
+          "CC-3566",
+          "CC-3422",
+          "C13171-K2"
+        ]
+      },
+      {
+        "claim": "The rare-device list contains no device unique to this episode: the flagged device string is a generic browser profile, and the high-fraud linked cards (e.g. C11923-K2, C04597-K2) share only portfolio-wide common strings, so no shared-origin link is supportable.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C11923-K2",
+          "C04597-K2",
+          "C13171-K2"
+        ]
+      },
+      {
+        "claim": "Policy R7 directs CREATE_CASE, VERIFY_WITH_CUSTOMER and WARN_CUSTOMER \u2014 not a block \u2014 when a disputed charge matches the cardholder's own recurring pattern.",
+        "source": "document",
+        "ref": "policy:R7",
+        "entity_ids": []
+      },
+      {
+        "claim": "Customer confirms the $55.68 charge as their own recurring online purchase after being shown the prior same-amount history.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3558054",
+          "C13171"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1715",
+      "CC-3566",
+      "CC-3422",
+      "CC-4027",
+      "CC-0893"
+    ],
+    "summary": "Customer C13171 disputes a $55.68 online charge (3558054) on card C13171-K2. Everything measurable about the charge is in-profile: 1.03x the card's mean, online product C like 99.9% of 899 baseline transactions, on a device already seen on the account with no proxy, scored 0.38. The card has 13 prior charges at this same amount across six months, including two within 20 minutes of the disputed one, so this looks like the cardholder's own repeating purchase rather than a fraud burst. The customer has genuine prior fraud history on this card (CC-1715, CC-3566, CC-3422), but those episodes were driven by unseen devices and out-of-profile amounts, which is not the case here. Under R7 this warrants a case plus customer verification and a warning, not a block; the expected reply is that the customer recognises the recurring merchant.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-008"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer, shown the list of 13 prior same-amount charges over six months including 3557979 and 3557987 minutes earlier, recognises the merchant as their own repeating online purchase and confirms the $55.68 charge was theirs."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: dispute of a charge matching the cardholder's recurring pattern"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: confirm the recurring merchant/amount with the customer"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: send a recurring-charge reminder; do not block"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7/\u00a73a: disputed charge; case records the dispute"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: recurring-charge reminder; do not block"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: customer recognises the recurring charge"
+      }
+    ],
+    "what_changed": "Verification turned an uncertain, dispute-driven case into a legitimate one: the assumed customer confirmation aligns with the 13 prior same-amount charges and moved fraud probability from 0.33 to 0.17."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Customer confirmation plus the in-profile amount/channel/device and the documented same-amount history settle the question; no further graph step would change the decision, and no block is warranted under R7.",
+  "tool_calls": 9,
+  "tokens": 33869,
+  "latency_s": 77.0
+}

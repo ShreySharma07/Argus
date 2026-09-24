@@ -1,0 +1,155 @@
+{
+  "case_id": "HHG-016",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.3,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Card baseline over 180 days: 48 transactions, 100% online, 100% product C, mean $39.80, std $25.21, max $94.70 - the disputed $59.67 (amount_z 0.79, 1.5x mean) is ordinary for this card.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C09988-K1",
+          "3534820"
+        ]
+      },
+      {
+        "claim": "The card already used 13 distinct devices in 180 days (top device only 16/48 txns), so the 'New' flag on 'Windows | unknown | edge 16.0 | unknown' is weak evidence of compromise on this particular account.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C09988-K1",
+          "3534820"
+        ]
+      },
+      {
+        "claim": "Episode window contains exactly one transaction (3534820) - no 2-4 transaction burst, no card-testing run (<$5 authorizations), no just-under-$500 run, no region change (new_region_for_card false).",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3534820"
+        ]
+      },
+      {
+        "claim": "Model risk score on the flagged transaction is 0.37 - low, and by policy a score is a reason to look, not a verdict.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3534820"
+        ]
+      },
+      {
+        "claim": "An identical $59.67 charge exists two months earlier (3368735, 2016-10); looks_monthly is false with only one prior instance, so it is a partial, not a confirmed, recurring pattern.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3534820"
+        ]
+      },
+      {
+        "claim": "The only rare shared device (SAMSUNG SM-A310F ... samsung browser 6.4; 6 cards all-time, 2 in window) is NOT the device used on the flagged transaction, and the single card it links to (C03938-K1, 7 txns, $356.52) has no confirmed fraud cases - no shared-origin evidence under R6.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C03938-K1"
+        ]
+      },
+      {
+        "claim": "Memory holds 10 device-linked confirmed-fraud cases (8 card_not_present_new_device, 2 card_not_present_fraud, e.g. CC-2898 $209.28, CC-2675 $87.85), showing this bank does see new-device CNP fraud at similar small amounts - the reason the case is not dismissed outright.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-2898",
+          "CC-2675",
+          "CC-2694"
+        ]
+      },
+      {
+        "claim": "Semantically similar closed cases CC-0189 and CC-0986 were cleared after the cardholder confirmed a purchase from a new phone/device, supporting that a lone New-device flag frequently resolves as legitimate.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-0189",
+          "CC-0986"
+        ]
+      },
+      {
+        "claim": "Policy R1 requires verification rather than a block when the case rests on a single signal and probability is under 0.70.",
+        "source": "document",
+        "ref": "policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Customer validation: the cardholder recognises the identical October charge as their own recurring merchant billing and accepts the December charge as the same subscription.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3534820"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2898",
+      "CC-2675",
+      "CC-0189",
+      "CC-0986"
+    ],
+    "summary": "Customer C09988 disputed a $59.67 online charge (3534820, 2016-12-11) on card C09988-K1. The transaction matches the card's exclusively online, product-C profile and is only 0.79 SD above a $39.80 mean, well under the $94.70 historical max; the model scored it 0.37. The sole anomaly is a 'New' device flag, but the card has used 13 devices in 180 days, and the rare shared device in the graph is a different device linked to one card with no confirmed fraud. A prior identical $59.67 charge (3368735, October) suggests a forgotten recurring merchant billing. Verification was requested under R1; on the assumed confirmation the alert resolves as legitimate, with a case record kept and the customer warned to re-contact if further unrecognised charges appear.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-016"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer, when shown the identical $59.67 charge from 2016-10 (txn 3368735) at the same merchant, recognises it as their own recurring subscription and accepts that the 2016-12-11 charge is the same subscription billed from a browser they recently started using."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: p=0.45 is not decisive; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: a case is opened whenever evidence is requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: every customer dispute opens a case"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: close the alert as legitimate and note the confirmation"
+      }
+    ],
+    "what_changed": "Before verification the case was genuinely balanced at 0.45 (dispute plus a New-device flag against a fully in-profile amount and channel); the customer recognising the identical October charge as their own recurring billing moved the assessment to legitimate at 0.30."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "The verification response settles the question and exposure is only $59.67, well under the $500 escalation threshold; no further graph steps (no burst, no region change, no fraud-bearing device link) would change the decision.",
+  "tool_calls": 9,
+  "tokens": 14778,
+  "latency_s": 61.8
+}

@@ -1,0 +1,169 @@
+{
+  "case_id": "HHG-020",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.16,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3509359 is $125.08, below the card's 180d mean of $218.79 (amount_z -0.24, 0.57x mean), far under the card max of $1,960.95.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C12265-K2",
+          "3509359"
+        ]
+      },
+      {
+        "claim": "Transaction is in the cardholder's only historical region 264 / country 87 (82 of 82 baseline txns), new_region_for_card = false.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3509359",
+          "C12265-K2"
+        ]
+      },
+      {
+        "claim": "Device 'Trident/7.0 | Windows 10 | ie 11.0 for desktop | 1920x1080' is not in the card's 4 known devices and is flagged New for this account; no proxy recorded.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3509359"
+        ]
+      },
+      {
+        "claim": "Product 'R' has 0% share in the 180d baseline (W 78, H 4) and online is only 4.9% of the card's channel mix, so the purchase type is out of profile.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C12265-K2",
+          "3509359"
+        ]
+      },
+      {
+        "claim": "No burst: only 1 online txn in the episode window; the other two window txns (3501882 $141.02, 3501890 $141.07) are in-person, in-region, and scored 0.10/0.11 \u2014 normal home activity continued.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3501882",
+          "3501890",
+          "3509359"
+        ]
+      },
+      {
+        "claim": "No card-testing run and no just-under-$500 run detected; no rare shared devices and no cards linked by a rare device.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C12265-K2"
+        ]
+      },
+      {
+        "claim": "Region 264 shows 18 newcomer cards in 7d with a 0.39 fraud-history rate vs 0.10 base rate, but this card is not a newcomer (82 prior txns there), so the cluster does not implicate it.",
+        "source": "graph",
+        "ref": "query:region_newcomers",
+        "entity_ids": [
+          "C12265-K2"
+        ]
+      },
+      {
+        "claim": "Two prior confirmed account-takeover cases on the same card (CC-2277 $81.93, CC-2447 $33.95, Aug 2016) raise prior risk, but both involved small mixed-channel amounts reported by the cardholder, unlike this single mid-size in-region online purchase.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-2277",
+          "CC-2447",
+          "C12265-K2"
+        ]
+      },
+      {
+        "claim": "Closest semantic matches (CC-5236, CC-0099, CC-5224, CC-4395, CC-5142) are all high-scoring alerts on purchases from a device new to the account that the cardholder confirmed; all cleared.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-5236",
+          "CC-0099",
+          "CC-5224"
+        ]
+      },
+      {
+        "claim": "Policy R1 requires verification rather than a block where probability is below 0.70 on a weak/ambiguous signal.",
+        "source": "document",
+        "ref": "policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Customer confirms the $125.08 purchase from their new desktop; no other unrecognized activity reported.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3509359",
+          "C12265-K2"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2277",
+      "CC-2447",
+      "CC-5236",
+      "CC-0099",
+      "CC-5224"
+    ],
+    "summary": "Case HHG-020 flags a $125.08 online purchase (txn 3509359) scored 0.52. The amount is below the card's own average, the region and country match the card's entire 180-day history, and in-person activity in region 264 continued on five days in the week around it. The adverse signals are limited to a device new to the account and a product code ('R') absent from the baseline \u2014 the classic ambiguous single online purchase, not the 2-4 transaction burst of card-not-present fraud. Two prior confirmed ATO cases on this card justified caution, but their signature (small mixed-channel items) does not repeat here, and there is no shared device or ring link. Verification was requested under R1; the cardholder confirmed the purchase, so the alert is cleared and the device should be added to the profile under R3.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-020"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms they made the $125.08 online purchase (txn 3509359) on 2016-12-03 from a new Windows 10 desktop, and reports no other unrecognized activity."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "\u00a75/\u00a76: p=0.42 is not decisive; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: a case is opened whenever evidence is requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: activity is the cardholder's own; let the transaction stand"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: close the alert as legitimate and note the confirmation"
+      }
+    ],
+    "what_changed": "Customer confirmation moved the assessment from uncertain (0.42) to legitimate (0.16), turning the initial VERIFY_WITH_CUSTOMER into CLOSE_NO_FRAUD with the new device added to the card profile."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Verification response settled the question: cardholder confirmed the transaction (R3), and no shared-device, ring or burst evidence exists that further queries could change.",
+  "tool_calls": 9,
+  "tokens": 12313,
+  "latency_s": 54.6
+}

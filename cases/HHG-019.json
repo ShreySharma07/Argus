@@ -1,0 +1,205 @@
+{
+  "case_id": "HHG-019",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.9,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3503878"
+    ],
+    "first_suspicious_txn_id": "3503878",
+    "connected_card_ids": [
+      "C06224-K2"
+    ],
+    "connected_device_profiles": [
+      "Windows | other | chrome 61.0 | 1280x720"
+    ],
+    "exposure_usd": 99.92,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3503878 is a $99.92 online purchase (product R, region 264) from device 'Windows | other | chrome 61.0 | 1280x720' flagged New for this account; the device does not appear anywhere in the card's 180-day history across 46 devices.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3503878",
+          "C07987-K2"
+        ]
+      },
+      {
+        "claim": "The device profile is rare: 5 cards all-time, 3 cards in this window \u2014 not a common browser string, so the overlap is meaningful.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "Windows | other | chrome 61.0 | 1280x720"
+        ]
+      },
+      {
+        "claim": "The same rare device is used by card C06224-K2, which has 14 confirmed fraud cases (e.g. CC-2800 account_takeover, $23,421.18 over 115 txns; CC-4633, CC-0475 card-not-present).",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C06224-K2",
+          "CC-2800"
+        ]
+      },
+      {
+        "claim": "This card is a repeat fraud victim: CC-2011 ($3,059.89, out_of_region_use), CC-5026 ($309.86, out_of_region_use) and CC-2860 ($149.92, card_not_present_fraud) were all confirmed fraud on C07987-K2 in 2016.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "C07987-K2",
+          "CC-2011",
+          "CC-5026",
+          "CC-2860"
+        ]
+      },
+      {
+        "claim": "Region 264 shows 25 newcomer cards in 7 days of which 7 (28%) have confirmed fraud history, versus a 10% base rate across all cards.",
+        "source": "graph",
+        "ref": "query:region_newcomers",
+        "entity_ids": []
+      },
+      {
+        "claim": "Mitigating: the amount is below the card's average (amount_vs_mean 0.52, amount_z -0.44), online is 26% of the card's history, and region 264 already has 5 prior txns \u2014 none of these are anomalous on their own.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C07987-K2",
+          "3503878"
+        ]
+      },
+      {
+        "claim": "Mitigating: five semantically similar closed cases (CC-0099, CC-0015, CC-4259, CC-3506, CC-0269) with scores 0.81-0.92 on $34-$125 purchases were all cleared as genuine purchases from a new phone; CC-2087 on this very card was also cleared after the cardholder confirmed.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-0099",
+          "CC-0015",
+          "CC-4259",
+          "CC-3506",
+          "CC-0269",
+          "CC-2087"
+        ]
+      },
+      {
+        "claim": "No card-testing sequence and no just-under-threshold run in the window; the two other txns (3495125 in-person $311.95 region 299, 3499109 in-person $116.91 region 384) scored 0.22 and 0.12 and fit home behaviour, so the episode is a single online txn.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3495125",
+          "3499109",
+          "3503878"
+        ]
+      },
+      {
+        "claim": "R1 requires verification before blocking when probability is under 0.70 and the case rests on a weak/limited signal set.",
+        "source": "document",
+        "ref": "policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Customer denies the 2016-12-01 online transaction, converting the device link into confirmed unauthorised use.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3503878"
+        ]
+      },
+      {
+        "claim": "R6/\u00a73a: several cards show fraud from the same rare device profile, so the case warrants CREATE_CASE, FILE_REPORT and MONITOR_CONNECTED_CARDS for C06224-K2 despite exposure under $1,000.",
+        "source": "document",
+        "ref": "policy:R6",
+        "entity_ids": [
+          "C06224-K2",
+          "Windows | other | chrome 61.0 | 1280x720"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2011",
+      "CC-5026",
+      "CC-2860",
+      "CC-2087",
+      "CC-2800",
+      "CC-5377",
+      "CC-5528",
+      "CC-0015",
+      "CC-4259"
+    ],
+    "summary": "A $99.92 online purchase on card C07987-K2 scored 0.90. The amount, region and channel are all within the cardholder's normal envelope, so the transaction alone is ambiguous. The decisive evidence is the device: a rare profile ('Windows | other | chrome 61.0 | 1280x720', 5 cards all-time) that is New for this account and is also used by C06224-K2, a card with 14 confirmed fraud cases including a $23k account takeover. The cardholder is also a repeat victim with three prior confirmed-fraud cases. Under R1 the case was verified with the customer first; on the assumed denial the verdict is card-not-present fraud from a new device tied to a shared-origin compromise. Recommended: BLOCK_CARD, CREATE_CASE, FILE_REPORT (shared device profile, R6/\u00a73a) and MONITOR_CONNECTED_CARDS for C06224-K2 and the cardholder's other card C07987-K1.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-019"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer states they do not recognise the $99.92 online purchase on 2016-12-01 and did not use a new Windows/Chrome 61 device; they confirm the in-person purchases on 2016-11-28 and 2016-11-30 were theirs."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "\u00a75/\u00a76: p=0.66 is not decisive; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: a case is opened whenever evidence is requested"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R1: keep the card active but raise monitoring while verification is pending"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denies the transaction; exposure $99.92 <= $2,500 -> L1"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "\u00a73a/R2/R6/R9: report conditions met (see sar.reason)"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: monitor 1 card(s) sharing Rare device profile 'Windows | other | chrome 61.0 | 1280x720' (5 cards all-time, 3 in window) shared with card C06224-K2, which has 14 confirmed fraud cases"
+      }
+    ],
+    "what_changed": "Before verification the case was uncertain at 0.66 \u2014 a rare shared device against an otherwise ordinary purchase and a memory full of cleared 'new phone' alerts. The customer's denial removed the benign explanation and moved the verdict to fraud at 0.90, triggering R2 plus R6 reporting."
+  },
+  "sar": {
+    "file": true,
+    "reason": "File: activity connects to a shared origin / other customers' fraud (Rare device profile 'Windows | other | chrome 61.0 | 1280x720' (5 cards all-time, 3 in window) shared with card C06224-K2, which has 14 confirmed fraud cases) (\u00a73a, R6).",
+    "narrative": "This Suspicious Activity Report is filed to document confirmed card-not-present fraud involving unauthorised use of a customer credit card from a newly observed device, where the device profile is shared with another card carrying extensive confirmed fraud history. The subject account belongs to customer C07987, and the affected instrument is card C07987-K2; the customer's other card C07987-K1 is also referenced for monitoring. On 2016-12-01 at 17:28:53, transaction 3503878, a $99.92 online purchase of product R billed to region 264, was executed through the card-not-present channel from device profile 'Windows | other | chrome 61.0 | 1280x720'. That device was flagged as New for this account and does not appear anywhere in the card's 180-day history, which spans 46 distinct devices. The device profile is rare, appearing on only five cards all-time and three cards within the review window, and it is also used by card C06224-K2, which has 14 confirmed fraud cases including case CC-2800, an account takeover totalling $23,421.18 across 115 transactions, and card-not-present cases CC-4633 and CC-0475. Card C07987-K2 is a repeat fraud victim, with three prior confirmed-fraud cases in 2016: CC-2011 ($3,059.89, out-of-region use), CC-5026 ($309.86, out-of-region use) and CC-2860 ($149.92, card-not-present fraud). Region 264 showed 25 newcomer cards over seven days, of which seven (28%) have confirmed fraud history, against a 10% base rate across all cards. The transaction amount, channel and region were individually within the cardholder's normal envelope (amount 0.52 of the card's mean, amount z-score -0.44, online activity 26% of history, five prior transactions in region 264), and no card-testing sequence or just-under-threshold run was present; the two other transactions in the window, 3495125 (in-person, $311.95, region 299) and 3499109 (in-person, $116.91, region 384), were consistent with home behaviour. Because the initial probability was not decisive, the customer was contacted for verification under policy R1; customer C07987 stated they do not recognise the 2016-12-01 online purchase and did not use a new Windows/Chrome 61 device, while confirming the in-person purchases of 2016-11-28 and 2016-11-30 as their own. The denial removed the benign 'new device' explanation and converted the rare shared-device link into confirmed unauthorised use, raising the fraud assessment to 0.90. Total exposure is $99.92 on a single transaction; the bank blocked card C07987-K2, opened a fraud case, filed this report under policy R6/\\u00a73a on the shared rare device profile, and placed connected card C06224-K2 and the customer's other card C07987-K1 under enhanced monitoring.",
+    "subjects": [
+      "C07987",
+      "C07987-K2",
+      "C07987-K1",
+      "C06224-K2",
+      "Windows | other | chrome 61.0 | 1280x720"
+    ],
+    "total_amount_usd": 99.92,
+    "activity_dates": [
+      "2016-12-01",
+      "2016-12-01"
+    ]
+  },
+  "stop_reason": "Verification response settles the question: probability 0.90 with at least three independent supports (customer denial, rare device shared with a confirmed-fraud card, card's own repeat fraud history). Further queries would not change the action set.",
+  "tool_calls": 10,
+  "tokens": 20457,
+  "latency_s": 73.3
+}

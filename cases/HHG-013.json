@@ -1,0 +1,156 @@
+{
+  "case_id": "HHG-013",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.12,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3526826 is $35.66 online, product C, device 'Windows | unknown | chrome 66.0 | unknown' flagged New for the account; amount is 0.31x the card mean and z = -0.37, well inside normal spend.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3526826",
+          "C07671-K2"
+        ]
+      },
+      {
+        "claim": "Card baseline over 180d: 1431 txns, 1410 in-person 'W', but also 21 online txns and 13 distinct devices, no single dominant device (top device used only 3 times) \u2014 a previously unseen browser string is not exceptional for this account.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C07671-K2"
+        ]
+      },
+      {
+        "claim": "Only 1 online transaction in the whole episode window; the other 34 txns (2016-12-06 to 12-09) are in-person 'W' purchases in home regions 264/310/110, 25 of them within 48h of the flag \u2014 no CNP burst and no paused home activity.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3518402",
+          "3522133",
+          "3526747",
+          "3526999"
+        ]
+      },
+      {
+        "claim": "No card-testing run (no >=3 sub-$5 authorizations) and no just-under-$500 run were detected in the window; largest in-person amounts ($663.96, $334.91) carry low model scores (0.11, 0.14) and fit the card's max of $3,891.01.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3522133",
+          "3525584"
+        ]
+      },
+      {
+        "claim": "The only rare shared device (SAMSUNG SM-G950U..., 4 cards all-time) is not the device on the flagged txn, and cards_linked_by_rare_device is empty \u2014 no shared-origin link to another customer's fraud.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C07671-K2"
+        ]
+      },
+      {
+        "claim": "Card C07671-K2 has three prior confirmed-fraud cases (CC-1475 $1,307.98 ATO, CC-3216 $449.97 CNP-new-device, CC-4294 $506.01 ATO), all multi-transaction episodes; it also has a cleared high-score case (CC-3761, $3,891.01 confirmed by the cardholder).",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-1475",
+          "CC-3216",
+          "CC-4294",
+          "CC-3761"
+        ]
+      },
+      {
+        "claim": "Semantically nearest closed cases \u2014 CC-3520 ($49.99 @0.87), CC-4395 ($35.76 @0.84), CC-5236 ($12.25 @0.82) \u2014 are all small new-device alerts that the cardholder confirmed and that closed as no fraud.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-3520",
+          "CC-4395",
+          "CC-5236"
+        ]
+      },
+      {
+        "claim": "Policy R1 requires VERIFY_WITH_CUSTOMER or STEP_UP_AUTH rather than a block when the case rests on a single signal with probability under 0.70.",
+        "source": "document",
+        "ref": "policy:R1",
+        "entity_ids": []
+      },
+      {
+        "claim": "Assumed customer reply: the cardholder confirms the $35.66 online purchase from a new device, which under R3 closes the alert as no fraud.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "3526826",
+          "C07671-K2"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1475",
+      "CC-3216",
+      "CC-4294",
+      "CC-3761",
+      "CC-3520",
+      "CC-4395",
+      "CC-5236"
+    ],
+    "summary": "Alert HHG-013 is a model-score trigger on a single $35.66 online purchase (product C) made from a browser marked New for card C07671-K2. The amount is below the card's average, the surrounding 34 transactions in the same 72 hours are the cardholder's ordinary in-person activity in their home regions, and there is no testing run, no CNP burst, no proxy and no link to any rare shared device or other card's fraud. The card's three earlier confirmed-fraud cases keep this from being an automatic clearance, but those episodes all involved multiple transactions and mixed-channel misuse, unlike this isolated low-value charge. Under R1 the correct initial action was VERIFY_WITH_CUSTOMER plus CREATE_CASE; the expected and assumed reply is that the cardholder made the purchase from a new device, matching the pattern of cleared cases CC-3520/CC-4395/CC-5236. Final recommendation: CLOSE_NO_FRAUD under R3, add the device to the profile, and keep passive monitoring given this card's fraud history.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-013"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms they made the $35.66 online purchase on 2016-12-09 from a new laptop/browser and recognises no other unfamiliar activity."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: p=0.40 is not decisive; verify before any block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "\u00a73a: a case is opened whenever evidence is requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: activity is the cardholder's own; let the transaction stand"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: close the alert as legitimate and note the confirmation"
+      }
+    ],
+    "what_changed": "Probability fell from 0.40 (uncertain, single new-device signal on a repeat-victim card) to 0.12 (legitimate) once the cardholder confirmed the purchase, moving the action from VERIFY_WITH_CUSTOMER to CLOSE_NO_FRAUD with the new device added to the profile."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "The verification response settles the question: with a confirmed purchase, sub-average amount, continuous normal home activity and no shared-device or ring linkage, further investigation would not change the decision.",
+  "tool_calls": 8,
+  "tokens": 19316,
+  "latency_s": 44.8
+}

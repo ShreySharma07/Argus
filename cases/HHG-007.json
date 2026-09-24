@@ -1,0 +1,164 @@
+{
+  "case_id": "HHG-007",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.12,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Flagged txn 3514948 is $111.92, 0.9x the card's 180d mean of $124.74 (amount_z -0.07), well under the card max of $2,529.78 \u2014 no amount anomaly.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3514948",
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Flagged txn is card-present, product W, in region 264: channel/product share in history 91.1% and 2,220 of 2,431 baseline txns are in region 264; new_region_for_card and new_device_for_card are both false.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "3514948",
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Card was used in region 264 on all eight days 2016-11-28 to 2016-12-05 with 27 home transactions inside the 48h window \u2014 continuous normal home activity, not a clone or trip signature.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "No card-testing run and no just-under-$500 run detected in the window; only 2 of the ~40 episode transactions are online ($25.04 on a 'Found' device, $99.94), both low-scoring (0.01 and 0.11) and in line with the card's 216 online baseline txns.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3505936",
+          "3507797",
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Prior alert CC-0657 on this exact card: a $1,769.94 charge scored 0.90 by the model was confirmed by the cardholder and cleared \u2014 this card generates high scores on legitimate spend.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-0657",
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Past confirmed frauds on C09933-K2 (CC-0104, CC-3821 out-of-region; CC-1524 mixed-channel ATO) all featured regions/channels with no cardholder history; none of those markers is present on 3514948.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "CC-0104",
+          "CC-3821",
+          "CC-1524",
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "None of the five rare shared device profiles (e.g. 'rv:59.0 | Mac OS X 10.12 | firefox 59.0 | 2560x1440', 7 cards all-time) appears on this card's episode, so the ring of cards with confirmed fraud (C06224-K2, C05704-K2, C11000-K2 and others) is not structurally linked to this alert.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C09933-K2",
+          "C06224-K2",
+          "C05704-K2",
+          "C11000-K2"
+        ]
+      },
+      {
+        "claim": "Region 264 cluster shows 18 newcomer cards in 7d with a 0.17 fraud-history rate vs 0.10 base rate, but C09933-K2 is an established card there (2,220 txns) and is not among the three flagged newcomers.",
+        "source": "graph",
+        "ref": "query:region_newcomers",
+        "entity_ids": [
+          "C06084-K2",
+          "C06437-K1",
+          "C07267-K1",
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Semantic memory: the five nearest closed cases (CC-0954, CC-1114, CC-4349, CC-5448, CC-0489, similarity 0.83-0.84) were all high-score alerts cleared after cardholder confirmation.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-0954",
+          "CC-1114",
+          "CC-4349",
+          "CC-5448",
+          "CC-0489"
+        ]
+      },
+      {
+        "claim": "Policy \u00a76 permits stopping at probability <= 0.15 supported by at least two independent pieces of evidence; five are present here.",
+        "source": "document",
+        "ref": "policy:s6",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0657",
+      "CC-0104",
+      "CC-3821",
+      "CC-1524",
+      "CC-0954",
+      "CC-1114"
+    ],
+    "summary": "Alert HHG-007 rests entirely on a 0.87 real-time model score for a $111.92 card-present purchase in region 264. That transaction is unremarkable on every structural dimension: 0.9x the card's mean amount, the card's dominant channel and product (91.1% each), its home region with 2,220 prior transactions, no new device or region flag, and uninterrupted home activity on every day of the preceding week (27 transactions within 48h). The two large in-person charges in the window ($2,254.95 and $2,529.78) sit at the card's established 180d maximum and scored 0.04 and 0.54 respectively; on a card averaging ~13 transactions a day they read as ordinary high-ticket spend, not an episode. The card's own history includes confirmed fraud (CC-0104, CC-3821, CC-1524), but each of those was defined by out-of-region or mixed-channel activity that is absent here, and a comparable high-score alert on this same card (CC-0657, $1,769.94 at 0.90) was cleared by the cardholder. No rare shared device profile and no region-newcomer link touches this card, so the wider ring of cards with confirmed fraud is not implicated. Verdict: legitimate, 0.12.",
+    "written_to_graph": true,
+    "graph_case_id": "AC-HHG-007"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: activity is the cardholder's own; let the transaction stand"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: close the alert as legitimate and note the confirmation"
+      }
+    ],
+    "final": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: activity is the cardholder's own; let the transaction stand"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: close the alert as legitimate and note the confirmation"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Fraud probability 0.12 (<= 0.15) supported by five independent pieces of evidence \u2014 amount, channel/product, region history, continuous home activity, and a cleared prior high-score case on the same card; further steps would not change the decision (policy:s6).",
+  "tool_calls": 9,
+  "tokens": 27902,
+  "latency_s": 69.0
+}
