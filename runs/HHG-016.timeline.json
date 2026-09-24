@@ -1,0 +1,40 @@
+[
+  {
+    "ts": "2026-09-24T12:34:32+00:00",
+    "node": "triage",
+    "detail": "customer_report on C09988-K1, flagged txn 3534820"
+  },
+  {
+    "ts": "2026-09-24T12:34:37+00:00",
+    "node": "gather_evidence",
+    "detail": "5 graph calls; 1 txns in episode window, 10 memory cases, 1 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:34:39+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R7', 'policy:R2', 'policy:R3'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-0198', 'CC-0189', 'CC-0987', 'CC-0986', 'CC-5308']"
+  },
+  {
+    "ts": "2026-09-24T12:35:34+00:00",
+    "node": "assess",
+    "detail": "before: uncertain p=0.45 pattern=none; request=customer_validation"
+  },
+  {
+    "ts": "2026-09-24T12:35:34+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.30; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE'] -> final ['CREATE_CASE', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:35:34+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:35:36+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-016 + edges written"
+  },
+  {
+    "rationale": "The disputed $59.67 charge sits comfortably inside this card's own profile: 48/48 prior transactions are online product C, mean $39.80 with a max of $94.70, so the amount is only 0.79 SD above mean (1.5x mean) and well below the card's ceiling. The only structural anomaly is the 'New' device flag on 'Windows | unknown | edge 16.0 | unknown', but the card has already used 13 distinct devices in 180 days, so an unseen browser/device string carries little weight here, and the model itself scored the transaction 0.37. There is no burst (one transaction in the episode window), no card-testing run, no region change, and the rare shared device (Samsung SM-A310F, 6 cards all-time) is not the device used on the flagged transaction and links only to C03938-K1, which carries no confirmed fraud cases. Against that, the customer's dispute and 10 memory cases of confirmed CNP/new-device fraud keep genuine doubt alive, and there is a prior identical $59.67 charge (3368735, 2016-10) suggesting a possibly forgotten subscription-style charge. That mix leaves the case at roughly even before verification, so policy R1 calls for customer validation rather than a block on a single weak signal."
+  }
+]

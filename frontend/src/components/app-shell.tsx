@@ -1,296 +1,117 @@
 import { ReactNode } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
+
+import { C, MONO } from "../constants/ui";
+import type { Role } from "../lib/api";
+import { ROLE_LABEL, useRole } from "../lib/role";
 
 type Props = {
   children: ReactNode;
   title: string;
   subtitle?: string;
+  right?: ReactNode;
+  bleed?: boolean; // full-width content without padding (graph canvas)
 };
 
 const navigation = [
-  {
-    label: "Dashboard",
-    href: "/",
-    icon: "▦",
-  },
-  {
-    label: "Investigations",
-    href: "/investigations",
-    icon: "⌕",
-  },
-  {
-    label: "Knowledge Graph",
-    href: "/knowledge-graph",
-    icon: "◉",
-  },
-  {
-    label: "Policies",
-    href: "/policies",
-    icon: "☷",
-  },
+  { label: "Overview", href: "/" },
+  { label: "Investigations", href: "/investigations" },
+  { label: "Knowledge Graph", href: "/knowledge-graph" },
+  { label: "Policy", href: "/policies" },
 ];
 
-export default function AppShell({
-  children,
-  title,
-  subtitle,
-}: Props) {
+const ROLES: Role[] = ["analyst", "L1", "L2"];
+
+export default function AppShell({ children, title, subtitle, right, bleed }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { role, setRole } = useRole();
 
   return (
     <View style={styles.container}>
       <View style={styles.sidebar}>
-        <View style={styles.logoContainer}>
-          <View style={styles.logo}>
-            <Text style={styles.logoLetter}>A</Text>
-          </View>
-
-          <View>
-            <Text style={styles.brand}>ARGUS</Text>
-            <Text style={styles.brandSubtitle}>Fraud Intelligence</Text>
-          </View>
+        <View style={styles.brandRow}>
+          <View style={styles.mark} />
+          <Text style={styles.brand}>ARGUS</Text>
         </View>
+        <Text style={styles.brandSub}>Fraud investigation</Text>
 
-        <View style={styles.navigation}>
+        <View style={styles.nav}>
           {navigation.map((item) => {
-            const active = pathname === item.href;
-
+            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href) ||
+              (item.href === "/investigations" && pathname.startsWith("/case"));
             return (
-              <Pressable
-                key={item.href}
-                onPress={() => router.push(item.href as any)}
-                style={[
-                  styles.navItem,
-                  active && styles.navItemActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.navIcon,
-                    active && styles.navTextActive,
-                  ]}
-                >
-                  {item.icon}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.navText,
-                    active && styles.navTextActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
+              <Pressable key={item.href} onPress={() => router.push(item.href as any)}
+                style={[styles.navItem, active && styles.navItemActive]}>
+                <View style={[styles.navBar, active && styles.navBarActive]} />
+                <Text style={[styles.navText, active && styles.navTextActive]}>{item.label}</Text>
               </Pressable>
             );
           })}
         </View>
 
-        <View style={styles.sidebarBottom}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>AB</Text>
-          </View>
-
-          <View>
-            <Text style={styles.userName}>Analyst</Text>
-            <Text style={styles.userRole}>Investigation Team</Text>
-          </View>
+        <View style={styles.roleBox}>
+          <Text style={styles.roleHeading}>Acting as</Text>
+          {ROLES.map((r) => (
+            <Pressable key={r} onPress={() => setRole(r)} style={styles.roleRow}>
+              <View style={[styles.radio, role === r && styles.radioOn]} />
+              <Text style={[styles.roleText, role === r && styles.roleTextOn]}>{ROLE_LABEL[r]}</Text>
+            </Pressable>
+          ))}
+          <Text style={styles.roleHint}>L1 and L2 actions need an approver with that authority.</Text>
         </View>
       </View>
 
       <View style={styles.main}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.pageTitle}>{title}</Text>
-
-            {subtitle ? (
-              <Text style={styles.pageSubtitle}>{subtitle}</Text>
-            ) : null}
+          <View style={{ flexShrink: 1 }}>
+            <Text style={styles.title}>{title}</Text>
+            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           </View>
-
-          <View style={styles.systemStatus}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusText}>System Operational</Text>
-          </View>
+          {right}
         </View>
-
-        <View style={styles.content}>{children}</View>
+        {bleed ? (
+          <View style={{ flex: 1 }}>{children}</View>
+        ) : (
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+            {children}
+          </ScrollView>
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    minHeight: "100%",
-    flexDirection: "row",
-    backgroundColor: "#F4F7FB",
-  },
-
-  sidebar: {
-    width: 250,
-    backgroundColor: "#111827",
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-  },
-
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 40,
-  },
-
-  logo: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: "#2563EB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  logoLetter: {
-    color: "white",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-
-  brand: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-
-  brandSubtitle: {
-    color: "#9CA3AF",
-    fontSize: 11,
-    marginTop: 2,
-  },
-
-  navigation: {
-    gap: 8,
-  },
-
-  navItem: {
-    height: 48,
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    gap: 14,
-  },
-
-  navItemActive: {
-    backgroundColor: "#1F2937",
-  },
-
-  navIcon: {
-    width: 22,
-    color: "#9CA3AF",
-    fontSize: 20,
-  },
-
-  navText: {
-    color: "#9CA3AF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-
-  navTextActive: {
-    color: "#FFFFFF",
-  },
-
-  sidebarBottom: {
-    marginTop: "auto",
-    borderTopWidth: 1,
-    borderTopColor: "#374151",
-    paddingTop: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#2563EB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  avatarText: {
-    color: "white",
-    fontWeight: "700",
-  },
-
-  userName: {
-    color: "white",
-    fontWeight: "700",
-  },
-
-  userRole: {
-    color: "#9CA3AF",
-    fontSize: 11,
-    marginTop: 2,
-  },
-
-  main: {
-    flex: 1,
-  },
-
+  container: { flex: 1, minHeight: "100%", flexDirection: "row", backgroundColor: C.bg },
+  sidebar: { width: 232, backgroundColor: C.sidebar, paddingHorizontal: 18, paddingVertical: 22 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  mark: { width: 14, height: 14, borderRadius: 3, borderWidth: 2, borderColor: "#E6E8EC", transform: [{ rotate: "45deg" }] },
+  brand: { color: "#F4F5F7", fontSize: 15, fontWeight: "700", letterSpacing: 3 },
+  brandSub: { color: C.sidebarText, fontSize: 11, marginTop: 6, marginLeft: 24 },
+  nav: { marginTop: 36, gap: 2 },
+  navItem: { height: 38, flexDirection: "row", alignItems: "center", borderRadius: 6, paddingRight: 10 },
+  navItemActive: { backgroundColor: "#151A22" },
+  navBar: { width: 2, height: 16, marginRight: 12, backgroundColor: "transparent", borderRadius: 1 },
+  navBarActive: { backgroundColor: "#E6E8EC" },
+  navText: { color: C.sidebarText, fontSize: 13.5, fontWeight: "500" },
+  navTextActive: { color: "#F4F5F7" },
+  roleBox: { marginTop: "auto", borderTopWidth: 1, borderTopColor: C.sidebarLine, paddingTop: 16, gap: 8 },
+  roleHeading: { color: "#5E6675", fontSize: 10.5, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 2 },
+  roleRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 3 },
+  radio: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: "#4A5160" },
+  radioOn: { borderColor: "#E6E8EC", backgroundColor: "#E6E8EC" },
+  roleText: { color: C.sidebarText, fontSize: 12.5 },
+  roleTextOn: { color: "#F4F5F7" },
+  roleHint: { color: "#4F5664", fontSize: 10.5, lineHeight: 15, marginTop: 6, fontFamily: MONO },
+  main: { flex: 1 },
   header: {
-    height: 92,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    paddingHorizontal: 32,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    minHeight: 76, paddingHorizontal: 32, paddingVertical: 16, backgroundColor: C.panel,
+    borderBottomWidth: 1, borderBottomColor: C.line, flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between", gap: 16,
   },
-
-  pageTitle: {
-    color: "#111827",
-    fontSize: 24,
-    fontWeight: "800",
-  },
-
-  pageSubtitle: {
-    color: "#6B7280",
-    marginTop: 5,
-  },
-
-  systemStatus: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-  },
-
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#22C55E",
-  },
-
-  statusText: {
-    color: "#4B5563",
-    fontSize: 13,
-  },
-
-  content: {
-    flex: 1,
-    padding: 32,
-  },
+  title: { color: C.text, fontSize: 19, fontWeight: "650" as any },
+  subtitle: { color: C.text2, marginTop: 4, fontSize: 13 },
+  content: { padding: 28, gap: 20, maxWidth: 1280, width: "100%" },
 });

@@ -1,0 +1,40 @@
+[
+  {
+    "ts": "2026-09-24T12:33:29+00:00",
+    "node": "triage",
+    "detail": "risk_score on C05876-K2, flagged txn 3553342"
+  },
+  {
+    "ts": "2026-09-24T12:33:33+00:00",
+    "node": "gather_evidence",
+    "detail": "5 graph calls; 22 txns in episode window, 2 memory cases, 4 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:33:36+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-0994', 'CC-0042', 'CC-4974', 'CC-4730', 'CC-0642']"
+  },
+  {
+    "ts": "2026-09-24T12:34:17+00:00",
+    "node": "assess",
+    "detail": "before: legitimate p=0.14 pattern=none; request=none"
+  },
+  {
+    "ts": "2026-09-24T12:34:17+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.14; initial ['ALLOW_TRANSACTION', 'CLOSE_NO_FRAUD'] -> final ['ALLOW_TRANSACTION', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:34:17+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): ALLOW_TRANSACTION, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:34:19+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-012 + edges written"
+  },
+  {
+    "rationale": "The flagged transaction is a $30.91 in-person, product-W purchase in region 494 \u2014 a region the card has already used 21 times (including 2016-12-12, six days earlier) \u2014 and the amount is below the card's 180-day mean of $82.40 (amount_z -0.39). Channel and product match 93.3% of the card's 910-transaction baseline, and the surrounding window shows the cardholder's normal high-frequency, multi-region in-person behaviour continuing uninterrupted (13 home-region transactions within 48h), with no card-testing run, no just-under-threshold run, no new region and no new device on the flagged authorization. The only adverse signal is the 0.55 model score itself, which per policy is a reason to look, not a verdict. Memory on this customer is mixed but informative: CC-0003 on the same card was a 0.91-scored alert cleared after the cardholder confirmed travel, while CC-2370 was a genuine card-not-present fraud consisting of online purchases \u2014 a channel that is essentially absent from this episode (1 of 22 transactions, $5.92). One minor residual: that single online $5.92 authorization (3545223) used 'unknown | Android | chrome 66.0 | 1280x720', a rare device profile seen on 12 cards all-time and 8 in this window, some with confirmed fraud histories; it does not implicate the flagged in-person charge but warrants passive monitoring rather than action."
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "ts": "2026-09-24T12:33:45+00:00",
+    "node": "triage",
+    "detail": "risk_score on C07671-K2, flagged txn 3526826"
+  },
+  {
+    "ts": "2026-09-24T12:33:50+00:00",
+    "node": "gather_evidence",
+    "detail": "4 graph calls; 35 txns in episode window, 7 memory cases, 1 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:33:52+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-3520', 'CC-5236', 'CC-4395', 'CC-0010', 'CC-5525']"
+  },
+  {
+    "ts": "2026-09-24T12:34:30+00:00",
+    "node": "assess",
+    "detail": "before: uncertain p=0.40 pattern=none; request=customer_validation"
+  },
+  {
+    "ts": "2026-09-24T12:34:30+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.12; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE'] -> final ['ALLOW_TRANSACTION', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:34:30+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): ALLOW_TRANSACTION, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:34:31+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-013 + edges written"
+  },
+  {
+    "rationale": "The only anomalous element is the flagged transaction itself: $35.66 online, product C, from a Windows/chrome 66.0 browser marked New for the account, scored 0.76. Everything else in the 72-hour window is the cardholder's normal in-person 'W' activity in home regions 264/310/110 (34 in-person txns, 25 within 48h of the flag), so there is no paused-home-activity clone pattern, no burst of 2-4 online purchases, no tiny-authorization run and no just-under-threshold run. The amount is below the card's mean ($114.31, z = -0.37) and the card already has 21 online txns and 13 distinct devices in 180 days, so a previously unseen browser string is weak on its own. The card does carry three prior confirmed-fraud cases (CC-1475, CC-3216, CC-4294), which raises the prior and is why this is not dismissed outright, but all of those involved multi-transaction bursts or mixed-channel sprees rather than one small purchase. The rare device found by the shared-device query (SAMSUNG SM-G950U, 4 cards all-time) does not appear on this card's flagged transaction and produced no linked cards in the window. Under R1 this is a single signal below 0.70, so verification is required before any block; semantic memory (CC-3520, CC-4395, CC-5236) shows small new-device alerts of this shape closing as confirmed purchases."
+  }
+]

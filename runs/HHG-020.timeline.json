@@ -1,0 +1,40 @@
+[
+  {
+    "ts": "2026-09-24T12:35:37+00:00",
+    "node": "triage",
+    "detail": "risk_score on C12265-K2, flagged txn 3509359"
+  },
+  {
+    "ts": "2026-09-24T12:35:46+00:00",
+    "node": "gather_evidence",
+    "detail": "5 graph calls; 3 txns in episode window, 2 memory cases, 0 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:35:50+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-5236', 'CC-0099', 'CC-5224', 'CC-4395', 'CC-5142']"
+  },
+  {
+    "ts": "2026-09-24T12:36:32+00:00",
+    "node": "assess",
+    "detail": "before: uncertain p=0.42 pattern=card_not_present_fraud; request=customer_validation"
+  },
+  {
+    "ts": "2026-09-24T12:36:32+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.16; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE'] -> final ['ALLOW_TRANSACTION', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:36:32+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): ALLOW_TRANSACTION, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:36:34+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-020 + edges written"
+  },
+  {
+    "rationale": "The flagged item is a single $125.08 online purchase in the cardholder's home region 264, below the card's 180d mean of $218.79 (amount_z -0.24), with normal in-person activity continuing around it (two in-person purchases on 2016-11-30 and use in region 264 on five days in the prior week). The only genuinely adverse signals are that the device 'Trident/7.0 | Windows 10 | ie 11.0 for desktop | 1920x1080' is New for this account and product 'R' never appears in the 82-transaction baseline; online is only 4.9% of history. There is no burst (one online txn in the episode), no card-testing run, no proxy, no rare shared device and no linked cards, so patterns 1, 3, 4 and the coordinated/undocumented bucket are not supported. Two prior confirmed account-takeover cases on this same card (CC-2277, CC-2447, Aug 2016, $81.93 and $33.95) are real context and keep this above a routine clear, but those were small mixed-channel items reported by the cardholder, and nothing here replicates that signature. Under R1/pattern-2 guidance a single unusual online purchase at probability well under 0.70 is ambiguous, so the correct step is verification; semantic memory (CC-5236, CC-0099, CC-5224) shows this shape usually resolves as a legitimate purchase from a new device."
+  }
+]

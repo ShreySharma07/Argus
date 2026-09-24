@@ -1,12 +1,12 @@
 import "../global.css";
 import { Stack } from "expo-router";
 
+import { RoleProvider } from "../lib/role";
+
 export default function RootLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    />
+    <RoleProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </RoleProvider>
   );
 }

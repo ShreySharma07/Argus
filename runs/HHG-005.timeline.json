@@ -1,0 +1,60 @@
+[
+  {
+    "ts": "2026-09-24T12:53:59+00:00",
+    "node": "triage",
+    "detail": "risk_score on C02923-K1, flagged txn 3523199"
+  },
+  {
+    "ts": "2026-09-24T12:54:03+00:00",
+    "node": "gather_evidence",
+    "detail": "6 graph calls; 1 txns in episode window, 10 memory cases, 1 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:54:06+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-3520', 'CC-0010', 'CC-0871', 'CC-5462', 'CC-0831']"
+  },
+  {
+    "ts": "2026-09-24T12:54:51+00:00",
+    "node": "assess",
+    "detail": "round 1: uncertain p=0.42 pattern=card_not_present_new_device signals=2 confidence=0.67 {'confidence': 0.67, 'coverage': 0.8, 'signal_agreement': 0.667, 'memory_agreement': 0.5}"
+  },
+  {
+    "ts": "2026-09-24T12:54:51+00:00",
+    "node": "request_evidence",
+    "detail": "step_up_auth: Please complete a one-time passcode challenge for the $100.07 online purchase made on 2016-12-07 21:38 from an iOS device (mobile safari, icloud.com email): was this purchase made by you from a device you own?"
+  },
+  {
+    "ts": "2026-09-24T12:54:55+00:00",
+    "node": "evidence_received",
+    "detail": "step_up_auth -> confirms: The cardholder completed the one-time passcode challenge successfully and confirmed the $100.07 online purchase of 2016-12-07 was made by them on their own iOS device, noting they routinely use several devices."
+  },
+  {
+    "ts": "2026-09-24T12:55:29+00:00",
+    "node": "assess",
+    "detail": "round 2: legitimate p=0.08 pattern=none confidence=0.85"
+  },
+  {
+    "ts": "2026-09-24T12:55:29+00:00",
+    "node": "stop",
+    "detail": "Decisive: p=0.08 with 4 independent signals and evidence confidence 0.85 (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:55:29+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.08; initial ['STEP_UP_AUTH', 'CREATE_CASE'] -> final ['ALLOW_TRANSACTION', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:55:29+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): ALLOW_TRANSACTION, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:55:31+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-005 + edges written"
+  },
+  {
+    "rationale": "The step-up authentication challenge was completed successfully and the cardholder confirmed the $100.07 purchase as their own, which under policy R3 settles the question. The underlying signal set was always weak: a single online transaction at 0.56x the card's mean amount ($100.07 vs $177.52), in the card's home region 330 (85 of 90 baseline txns) and home country 87, with no burst, no tiny-authorization run and no just-under-threshold pattern. The only anomaly was the device being New for this account, and this card has used 19 distinct devices in 180 days, so a new device carries little weight; memory is full of closed cases (CC-0219, CC-0189, CC-3520, CC-0010, CC-5462) cleared for exactly this reason. The rare device 'Windows | Windows 7 | chrome 64.0 | 1600x900' link to C00854-K2 does not touch the flagged transaction, which ran on an iOS Device profile, so it is not evidence against this transaction. The customer's earlier confirmed account-takeover cases (CC-2400, CC-2717, CC-2857) are from August 2016 and show a mixed-channel burst pattern absent here."
+  }
+]

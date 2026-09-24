@@ -1,0 +1,40 @@
+[
+  {
+    "ts": "2026-09-24T12:35:27+00:00",
+    "node": "triage",
+    "detail": "customer_report on C02354-K2, flagged txn 3491361"
+  },
+  {
+    "ts": "2026-09-24T12:35:42+00:00",
+    "node": "gather_evidence",
+    "detail": "6 graph calls; 143 txns in episode window, 96 memory cases, 15 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:35:49+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R7', 'policy:R2', 'policy:R3'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-1399', 'CC-3931', 'CC-5463', 'CC-4734', 'CC-3927']"
+  },
+  {
+    "ts": "2026-09-24T12:36:48+00:00",
+    "node": "assess",
+    "detail": "before: legitimate p=0.25 pattern=none; request=customer_validation"
+  },
+  {
+    "ts": "2026-09-24T12:36:48+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.12; initial ['CREATE_CASE', 'VERIFY_WITH_CUSTOMER', 'WARN_CUSTOMER'] -> final ['CREATE_CASE', 'WARN_CUSTOMER', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:36:48+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE, WARN_CUSTOMER, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:36:50+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-018 + edges written"
+  },
+  {
+    "rationale": "The disputed charge is a $39.08 in-person, product-W purchase in region 126 \u2014 a region with 565 prior transactions on this card and daily use on every one of the eight days around the alert \u2014 at 0.28x the card's mean amount (z = -0.48), with no new device, no new region and no proxy. The card's baseline is overwhelmingly in-person/W (91.6%), so the charge sits squarely inside the cardholder's own behaviour, and the graph records 29 prior transactions at the same amount on this card. No card-testing run, no just-under-threshold run and no burst of out-of-pattern online spend exists in the window; the two online $19.91/$20.05 items on the shared Firefox device profile are small, low-risk and flagged 'Found' (not New) for this account. The only fraud signal is the customer's own dispute, plus the context that this card has three prior confirmed-fraud cases (CC-0631, CC-2051, CC-3537) \u2014 but those involved new regions or mixed-channel anomalies that are absent here. Under R1 (single signal, probability well below 0.70) and R7 (disputed charge matching the cardholder's own repeated same-amount pattern), the correct step is verification rather than a block."
+  }
+]

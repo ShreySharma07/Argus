@@ -1,0 +1,45 @@
+[
+  {
+    "ts": "2026-09-24T12:34:19+00:00",
+    "node": "triage",
+    "detail": "analyst_request on C13487-K1, flagged txn 3478561"
+  },
+  {
+    "ts": "2026-09-24T12:34:24+00:00",
+    "node": "gather_evidence",
+    "detail": "5 graph calls; 3 txns in episode window, 4 memory cases, 1 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:34:25+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R6', 'pattern:card_not_present_fraud', 'guide:things_to_know'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-2971', 'CC-3035', 'CC-0139', 'CC-2531', 'CC-4830']"
+  },
+  {
+    "ts": "2026-09-24T12:35:19+00:00",
+    "node": "assess",
+    "detail": "before: fraud p=0.78 pattern=undocumented; request=customer_validation"
+  },
+  {
+    "ts": "2026-09-24T12:35:19+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.93; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE', 'MONITOR_CARD'] -> final ['BLOCK_CARD', 'CREATE_CASE', 'FILE_REPORT', 'MONITOR_CONNECTED_CARDS', 'ESCALATE_TO_ANALYST']"
+  },
+  {
+    "ts": "2026-09-24T12:35:19+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE, MONITOR_CONNECTED_CARDS, ESCALATE_TO_ANALYST | awaiting approval: BLOCK_CARD(L1), FILE_REPORT(L2)"
+  },
+  {
+    "ts": "2026-09-24T12:35:36+00:00",
+    "node": "explain",
+    "detail": "SAR drafted from guidance ['reg:fincen_complete_sufficient_sar_narrative:016', 'reg:fincen_complete_sufficient_sar_narrative:006', 'reg:fincen_sar_narrative_guidance:016']"
+  },
+  {
+    "ts": "2026-09-24T12:35:38+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-014 + edges written"
+  },
+  {
+    "rationale": "The flagged item is the only anomalous transaction on an otherwise stable in-person card: 69 of 71 baseline txns are in-person (online share 2.8%, product C share 1.4%), and the $74.96 online purchase came from a Samsung SM-G935F/Chrome-for-Android profile flagged New for this account behind an anonymous IP proxy. That exact device string is shared by 52 cards all-time and 20 cards in this window, and eight of those linked cards carry confirmed fraud cases; four closed cases in memory (CC-2985, CC-2971, CC-2649, CC-3035) are cardholders who reported online purchases they did not make from this same SM-G935F/anonymous-proxy profile, all closed as confirmed_fraud with the undocumented pattern. The low model score (0.05) is not exculpatory \u2014 it is a reason to look, not a verdict, and this device ring has repeatedly scored low. The surrounding in-person txns (3477218 in region 191, 3478886 in region 272) match the cardholder's normal home activity and are not part of the episode. Because this is a single disputed-value transaction rather than a customer report, I sought validation; given the memory precedent the customer almost certainly denies the online charge."
+  }
+]

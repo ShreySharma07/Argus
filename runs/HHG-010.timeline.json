@@ -1,0 +1,65 @@
+[
+  {
+    "ts": "2026-09-24T12:55:32+00:00",
+    "node": "triage",
+    "detail": "risk_score on C10434-K1, flagged txn 3506725"
+  },
+  {
+    "ts": "2026-09-24T12:55:37+00:00",
+    "node": "gather_evidence",
+    "detail": "6 graph calls; 1 txns in episode window, 1 memory cases, 1 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:55:39+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-3506', 'CC-0871', 'CC-5525', 'CC-0267', 'CC-0269']"
+  },
+  {
+    "ts": "2026-09-24T12:56:33+00:00",
+    "node": "assess",
+    "detail": "round 1: uncertain p=0.45 pattern=card_not_present_new_device signals=2 confidence=0.67 {'confidence': 0.67, 'coverage': 0.8, 'signal_agreement': 0.667, 'memory_agreement': 0.5}"
+  },
+  {
+    "ts": "2026-09-24T12:56:33+00:00",
+    "node": "request_evidence",
+    "detail": "customer_validation: On 2 December 2016 at 15:18 an online purchase of $1,000.03 was authorized on your card ending C10434-K1 from a Windows 10 / Edge 16.0 browser that we have not seen on your account before. Did you make this purchase, and was it from a new computer or browser of yours?"
+  },
+  {
+    "ts": "2026-09-24T12:56:38+00:00",
+    "node": "evidence_received",
+    "detail": "customer_validation -> denies: The cardholder denies making the $1,000.03 online purchase and states they have never used a Windows Edge browser; their devices are iPhone, Mac, and a Chrome laptop, and they have never spent anywhere near that amount on this card. They requested the card be blocked and reissued."
+  },
+  {
+    "ts": "2026-09-24T12:57:06+00:00",
+    "node": "assess",
+    "detail": "round 2: fraud p=0.93 pattern=card_not_present_new_device confidence=0.7"
+  },
+  {
+    "ts": "2026-09-24T12:57:06+00:00",
+    "node": "stop",
+    "detail": "Decisive: p=0.93 with 4 independent signals and evidence confidence 0.70 (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:57:06+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.93; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE', 'ESCALATE_TO_ANALYST'] -> final ['BLOCK_CARD', 'CREATE_CASE', 'FILE_REPORT', 'MONITOR_CONNECTED_CARDS']"
+  },
+  {
+    "ts": "2026-09-24T12:57:06+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE, MONITOR_CONNECTED_CARDS | awaiting approval: BLOCK_CARD(L1), FILE_REPORT(L2)"
+  },
+  {
+    "ts": "2026-09-24T12:57:19+00:00",
+    "node": "explain",
+    "detail": "SAR drafted from guidance ['reg:fincen_complete_sufficient_sar_narrative:016', 'reg:fincen_complete_sufficient_sar_narrative:006', 'reg:fincen_sar_narrative_guidance:016']"
+  },
+  {
+    "ts": "2026-09-24T12:57:20+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-010 + edges written"
+  },
+  {
+    "rationale": "The cardholder's reply settles the central question: they deny the $1,000.03 online purchase and state they have never used a Windows Edge browser, which is exactly the device on the flagged transaction (Windows | Windows 10 | edge 16.0 | 1366x768, flagged New for this account and absent from 11 known devices). The amount is 7.62x the card's 180d mean and above its all-time maximum of $670.04 (amount_z 4.97). Independently, that same Edge device profile appears on six other cards linked by rare-device analysis (C00854-K2, C11309-K1, C11000-K2, C09241-K2, C08918-K2, C12690-K2), all of which carry confirmed fraud cases, indicating a shared compromise origin rather than an isolated new-phone purchase. The benign prior on this customer (CC-0873, cleared travel) and the semantically similar 'new phone confirmed' cases no longer apply because the cardholder explicitly rejects this device and amount. Exposure exceeds $1,000 and the case connects to a shared device profile, so a case plus a regulatory report is warranted under R2/R6/\u00a73b."
+  }
+]

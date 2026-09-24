@@ -1,0 +1,60 @@
+[
+  {
+    "ts": "2026-09-24T12:53:03+00:00",
+    "node": "triage",
+    "detail": "customer_report on C08623-K2, flagged txn 3530164"
+  },
+  {
+    "ts": "2026-09-24T12:53:15+00:00",
+    "node": "gather_evidence",
+    "detail": "7 graph calls; 22 txns in episode window, 6 memory cases, 1 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:53:17+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R7', 'policy:R2', 'policy:R3'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-4538', 'CC-0034', 'CC-3931', 'CC-4734', 'CC-0516']"
+  },
+  {
+    "ts": "2026-09-24T12:54:00+00:00",
+    "node": "assess",
+    "detail": "round 1: legitimate p=0.30 pattern=none signals=4 confidence=0.67 {'confidence': 0.67, 'coverage': 0.8, 'signal_agreement': 1.0, 'memory_agreement': 0.167}"
+  },
+  {
+    "ts": "2026-09-24T12:54:00+00:00",
+    "node": "request_evidence",
+    "detail": "customer_validation: Transaction 3530164 is a $49.00 in-person purchase on 2016-12-10 at 13:01 in billing region 330, where your card was also used at 12:12 the same day and on Dec 3, 7 and 9. Charges of exactly $49.00 have appeared on this card 56 times since July. Were you (or an authorised user of the card) in that area on 10 December, and do you recognise this as a repeat charge you make regularly \u2014 for example a subscription, fuel, or transit purchase?"
+  },
+  {
+    "ts": "2026-09-24T12:54:04+00:00",
+    "node": "evidence_received",
+    "detail": "customer_validation -> denies: The cardholder maintains they did not make the $49.00 charge; while they acknowledge being in region 330 that day and using the card there around 12:12, they say they do not recognise the 13:01 purchase and do not have any $49.00 subscription, fuel or transit arrangement they are aware of."
+  },
+  {
+    "ts": "2026-09-24T12:54:52+00:00",
+    "node": "assess",
+    "detail": "round 2: legitimate p=0.35 pattern=none confidence=0.75"
+  },
+  {
+    "ts": "2026-09-24T12:54:52+00:00",
+    "node": "stop",
+    "detail": "Verification settled the question: customer_validation -> denies (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:54:52+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.35; initial ['CREATE_CASE', 'VERIFY_WITH_CUSTOMER', 'WARN_CUSTOMER'] -> final ['CREATE_CASE', 'WARN_CUSTOMER', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:54:52+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE, WARN_CUSTOMER, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:54:54+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-003 + edges written"
+  },
+  {
+    "rationale": "The disputed $49.00 charge is card-present (product W), in region 330 where the card has 42 prior transactions and was used on four separate days in the last week, and it falls 49 minutes after a purchase the cardholder explicitly acknowledges making in that same region (3530056, $116.93 at 12:12). The amount is below the card's mean ($128.84) and matches 56 prior transactions of the same amount spread over all six months of history, i.e. the cardholder's own repeating small-ticket pattern. The maintained denial in the customer reply is real evidence and keeps this above a clean clear, but it conflicts with every structural signal; prior confirmed fraud on this card (CC-2935, CC-4957, CC-2817, CC-3682) was out-of-region card-present use, which is exactly what is absent here. The rare-device link is not probative: the Trident/IE profile appears on 33 cards all-time, none of the episode transactions carry a device at all, and this card's own top devices are different. Exposure is $49 and no episode of unexplained activity exists, so R7 (disputed but matching the cardholder's own recurring pattern) governs over R2: create a case, warn the cardholder, do not block."
+  }
+]

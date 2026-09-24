@@ -1,0 +1,60 @@
+[
+  {
+    "ts": "2026-09-24T12:55:57+00:00",
+    "node": "triage",
+    "detail": "customer_report on C11923-K2, flagged txn 3583368"
+  },
+  {
+    "ts": "2026-09-24T12:56:11+00:00",
+    "node": "gather_evidence",
+    "detail": "6 graph calls; 100 txns in episode window, 175 memory cases, 329 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:56:13+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R7', 'policy:R2', 'policy:R3'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-3465', 'CC-0413', 'CC-5463', 'CC-3316', 'CC-0493']"
+  },
+  {
+    "ts": "2026-09-24T12:57:03+00:00",
+    "node": "assess",
+    "detail": "round 1: uncertain p=0.45 pattern=card_not_present_fraud signals=1 confidence=0.57 {'confidence': 0.57, 'coverage': 0.8, 'signal_agreement': 0.333, 'memory_agreement': 0.5}"
+  },
+  {
+    "ts": "2026-09-24T12:57:03+00:00",
+    "node": "request_evidence",
+    "detail": "customer_validation: Do you recognise two earlier charges on this card for the same amount of $131.30 \u2014 transaction 3193355 in August 2016 and transaction 3565743 earlier in December 2016 (e.g. a subscription or instalment plan)? And did you or anyone with access to your card make an online purchase in the early hours of 29 December 2016 from an Android phone (Samsung SM-G610F)?"
+  },
+  {
+    "ts": "2026-09-24T12:57:08+00:00",
+    "node": "evidence_received",
+    "detail": "customer_validation -> denies: The cardholder states they do not recognise the two earlier $131.30 charges (3193355 in August and 3565743 in December) and has no subscription or instalment plan at that amount, and they deny making any purchase in the early hours of 29 December 2016; they do not own or have access to a Samsung SM-G610F Android phone. They request the card be blocked and all three charges disputed."
+  },
+  {
+    "ts": "2026-09-24T12:57:42+00:00",
+    "node": "assess",
+    "detail": "round 2: fraud p=0.84 pattern=card_not_present_new_device confidence=1.0"
+  },
+  {
+    "ts": "2026-09-24T12:57:42+00:00",
+    "node": "stop",
+    "detail": "Verification settled the question: customer_validation -> denies (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:57:42+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.84; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE'] -> final ['BLOCK_CARD', 'CREATE_CASE']"
+  },
+  {
+    "ts": "2026-09-24T12:57:42+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE | awaiting approval: BLOCK_CARD(L1)"
+  },
+  {
+    "ts": "2026-09-24T12:57:44+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-011 + edges written"
+  },
+  {
+    "rationale": "The cardholder's reply is decisive on the disputed amounts: they deny the flagged $131.30 charge (3583368) and also the two earlier identical-amount charges (3193355 in August, 3565743 in December), and state they have no subscription at that amount and no access to a Samsung SM-G610F Android device. That kills the R7 'disputed but legitimate recurring charge' reading my earlier assessment was hedging on \\u2014 the gap was 123 days and looks_monthly was already false. The flagged transaction was made from a device new to this card (device_new_flag 'New', new_device_for_card true) at 03:27 local time for an amount 3.33x the card mean (z=2.55), which fits card-not-present fraud from a new device. Memory of structurally similar cases on this book is overwhelmingly confirmed_fraud for card_not_present_new_device / card_not_present_fraud, and closed cases such as CC-5499 and CC-5417 show single or few unrecognised online charges of this size closed as fraud. The flagged device string does not appear in the rare_shared_devices list and no region cluster exists, so I am not asserting a shared-origin ring; exposure across the three denied charges is $393.90, below the $1,000 reporting threshold."
+  }
+]

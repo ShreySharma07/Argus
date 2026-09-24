@@ -1,0 +1,40 @@
+[
+  {
+    "ts": "2026-09-24T12:34:20+00:00",
+    "node": "triage",
+    "detail": "risk_score on C03042-K1, flagged txn 3464869"
+  },
+  {
+    "ts": "2026-09-24T12:34:25+00:00",
+    "node": "gather_evidence",
+    "detail": "5 graph calls; 4 txns in episode window, 7 memory cases, 3 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:34:27+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R6', 'R8', 'R9', 's3a', 's6']; vector memory ['CC-0489', 'CC-0969', 'CC-2037', 'CC-4197', 'CC-2956']"
+  },
+  {
+    "ts": "2026-09-24T12:35:24+00:00",
+    "node": "assess",
+    "detail": "before: uncertain p=0.58 pattern=card_not_present_new_device; request=customer_validation"
+  },
+  {
+    "ts": "2026-09-24T12:35:24+00:00",
+    "node": "decide",
+    "detail": "final: fraud p=0.87; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE', 'MONITOR_CARD', 'ESCALATE_TO_ANALYST'] -> final ['BLOCK_CARD', 'CREATE_CASE']"
+  },
+  {
+    "ts": "2026-09-24T12:35:24+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): CREATE_CASE | awaiting approval: BLOCK_CARD(L1)"
+  },
+  {
+    "ts": "2026-09-24T12:35:26+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-015 + edges written"
+  },
+  {
+    "rationale": "The flagged item is a single online purchase of $599.94 (amount_z 3.57, 4.52x the card's 180d mean and above the card's prior maximum of $550.03) from a device never seen on this account and flagged 'New', in a billing region (327) with zero history on the card. That is pattern 3 shape, but only one online transaction, and this cardholder is unusually device-diverse (39 devices over 68 txns), so the 'New device' flag alone is weak. Two prior confirmed card_not_present_new_device frauds on this very card (CC-3886, CC-0615) raise the prior meaningfully, while CC-1313 and the semantically similar cases show this customer/population also generates cleared travel alerts. The rare device (8 cards all-time) shows only 1 card in the window, and the long fraud lists attached to linked cards come via 'Windows | Windows 7 | chrome 65.0 | 1280x1024', a common profile (44 cards all-time, 26 in window) that is not in this card's history, so no shared-origin conclusion is supported. Under R1 (probability below 0.70, essentially one anomalous transaction) I verified with the cardholder before recommending a block."
+  }
+]

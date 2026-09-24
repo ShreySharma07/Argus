@@ -1,0 +1,60 @@
+[
+  {
+    "ts": "2026-09-24T12:53:03+00:00",
+    "node": "triage",
+    "detail": "risk_score on C12382-K1, flagged txn 3514030"
+  },
+  {
+    "ts": "2026-09-24T12:53:08+00:00",
+    "node": "gather_evidence",
+    "detail": "6 graph calls; 9 txns in episode window, 4 memory cases, 0 rare devices"
+  },
+  {
+    "ts": "2026-09-24T12:53:13+00:00",
+    "node": "retrieve",
+    "detail": "policy: ['policy:R1', 'guide:things_to_know', 'policy:s3b'] + rules ['R1', 'R2', 'R3', 'R4', 'R6', 'R8', 'R9', 's3a', 's5', 's6']; vector memory ['CC-4349', 'CC-2037', 'CC-0601', 'CC-4475', 'CC-1149']"
+  },
+  {
+    "ts": "2026-09-24T12:53:55+00:00",
+    "node": "assess",
+    "detail": "round 1: legitimate p=0.30 pattern=none signals=4 confidence=0.62 {'confidence': 0.62, 'coverage': 0.8, 'signal_agreement': 1.0, 'memory_agreement': 0.0}"
+  },
+  {
+    "ts": "2026-09-24T12:53:55+00:00",
+    "node": "request_evidence",
+    "detail": "customer_validation: On 4 December 2016 at 19:55 a card-present purchase of $77.07 was made on your card ending K1 in billing region 444, shortly after purchases in regions 485, 203 and 444 the same day. Did you make or authorise this $77.07 purchase, and were you personally in that area on 4 December?"
+  },
+  {
+    "ts": "2026-09-24T12:53:57+00:00",
+    "node": "evidence_received",
+    "detail": "customer_validation -> confirms: The cardholder confirmed the $77.07 card-present purchase in region 444 on 4 December, stating they were in the area running errands that day and also made the other purchases in regions 485 and 203, which fits their usual in-person spending pattern."
+  },
+  {
+    "ts": "2026-09-24T12:54:27+00:00",
+    "node": "assess",
+    "detail": "round 2: legitimate p=0.06 pattern=none confidence=0.7"
+  },
+  {
+    "ts": "2026-09-24T12:54:27+00:00",
+    "node": "stop",
+    "detail": "Decisive: p=0.06 with 4 independent signals and evidence confidence 0.70 (policy \u00a76)."
+  },
+  {
+    "ts": "2026-09-24T12:54:27+00:00",
+    "node": "decide",
+    "detail": "final: legitimate p=0.06; initial ['VERIFY_WITH_CUSTOMER', 'CREATE_CASE'] -> final ['ALLOW_TRANSACTION', 'CLOSE_NO_FRAUD']"
+  },
+  {
+    "ts": "2026-09-24T12:54:27+00:00",
+    "node": "policy_gate",
+    "detail": "executed (auto): ALLOW_TRANSACTION, CLOSE_NO_FRAUD | awaiting approval: "
+  },
+  {
+    "ts": "2026-09-24T12:54:28+00:00",
+    "node": "write_memory",
+    "detail": "AgentCase AC-HHG-001 + edges written"
+  },
+  {
+    "rationale": "The flagged transaction 3514030 ($77.07, card-present, product W, region 444) fits card C12382-K1's baseline closely: the amount is 0.66x the 180-day mean (z = -0.34, far below the $845.01 max), the channel and product match 99.4% of history, and region 444 is not new for this card (10 prior transactions, new_region_for_card = false). The surrounding window is a continuous run of nine ordinary in-person purchases across the cardholder's usual regions (433, 204, 191, 485, 203) on 3-4 December, with no online activity, no tiny-authorization run, no device or proxy anomaly. The cardholder has now explicitly confirmed the $77.07 purchase and the neighbouring purchases in regions 485 and 203, which under policy R3 settles the question. The region 444 newcomer cluster (6 of 8 newcomer cards with fraud history) does not implicate this card, because this card is not a newcomer to 444. The prior confirmed-fraud cases on this customer (CC-1066, CC-3587, CC-2964, CC-1673) all involved genuinely new regions or a new online device, none of which is present here; the semantically similar cleared cases (CC-4349, CC-1149) match the profile of a high score on familiar travel that the cardholder confirmed."
+  }
+]

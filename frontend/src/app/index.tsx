@@ -1,202 +1,60 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import AppShell from "../components/app-shell";
-import StatCard from "../components/stat-card";
+import CaseTable from "../components/case-table";
+import { ErrorNote, Panel, Stat } from "../components/ui";
+import { C, humanize, MONO, usd } from "../constants/ui";
+import { api, useApi } from "../lib/api";
 
-const investigations = [
-  {
-    id: "CASE-1042",
-    customer: "Customer 2841",
-    risk: "High",
-    status: "Investigating",
-    amount: "₹82,450",
-  },
-  {
-    id: "CASE-1043",
-    customer: "Customer 9127",
-    risk: "Medium",
-    status: "Review",
-    amount: "₹31,200",
-  },
-  {
-    id: "CASE-1044",
-    customer: "Customer 4410",
-    risk: "High",
-    status: "Evidence Required",
-    amount: "₹1,24,900",
-  },
-];
+export default function Overview() {
+  const stats = useApi(api.stats);
+  const cases = useApi(api.cases);
+  const s = stats.data;
 
-export default function Dashboard() {
   return (
-    <AppShell
-      title="Investigation Dashboard"
-      subtitle="Monitor fraud signals and active investigations"
-    >
-      <View style={styles.stats}>
-        <StatCard
-          label="Active Investigations"
-          value="24"
-          change="+4 today"
-        />
-
-        <StatCard
-          label="High Risk Cases"
-          value="8"
-          change="Requires attention"
-        />
-
-        <StatCard
-          label="Transactions Flagged"
-          value="147"
-          change="Last 24 hours"
-        />
-
-        <StatCard
-          label="Resolved Cases"
-          value="312"
-          change="This month"
-        />
-      </View>
-
-      <View style={styles.panel}>
-        <View style={styles.panelHeader}>
-          <View>
-            <Text style={styles.panelTitle}>
-              Recent Investigations
-            </Text>
-
-            <Text style={styles.panelSubtitle}>
-              Latest cases requiring analyst review
-            </Text>
-          </View>
+    <AppShell title="Overview" subtitle="Benchmark case pack · November–December 2016">
+      {stats.error ? <ErrorNote error={stats.error} /> : null}
+      {s ? (
+        <View style={styles.stats}>
+          <Stat label="Cases investigated" value={String(s.cases)}
+            note={`${s.evidence_requests} evidence requests · ${s.avg_latency_s}s avg`} />
+          <Stat label="Fraud" value={String(s.verdicts.fraud ?? 0)}
+            note={`${s.verdicts.legitimate ?? 0} legitimate · ${s.verdicts.uncertain ?? 0} uncertain`} />
+          <Stat label="Exposure" value={usd(s.exposure_usd)} note={`${s.sars} suspicious activity reports`} />
+          <Stat label="Awaiting approval" value={String(s.pending_approvals)} note="L1 / L2 actions" />
         </View>
+      ) : null}
 
-        <View style={styles.tableHeader}>
-          <Text style={[styles.headerCell, styles.caseColumn]}>
-            CASE
-          </Text>
-
-          <Text style={[styles.headerCell, styles.customerColumn]}>
-            CUSTOMER
-          </Text>
-
-          <Text style={styles.headerCell}>AMOUNT</Text>
-
-          <Text style={styles.headerCell}>RISK</Text>
-
-          <Text style={styles.headerCell}>STATUS</Text>
-        </View>
-
-        {investigations.map((item) => (
-          <View key={item.id} style={styles.tableRow}>
-            <Text style={[styles.cell, styles.caseColumn]}>
-              {item.id}
-            </Text>
-
-            <Text style={[styles.cell, styles.customerColumn]}>
-              {item.customer}
-            </Text>
-
-            <Text style={styles.cell}>{item.amount}</Text>
-
-            <Text
-              style={[
-                styles.cell,
-                item.risk === "High"
-                  ? styles.highRisk
-                  : styles.mediumRisk,
-              ]}
-            >
-              {item.risk}
-            </Text>
-
-            <Text style={styles.cell}>{item.status}</Text>
+      {s ? (
+        <Panel title="Patterns identified">
+          <View style={styles.bars}>
+            {Object.entries(s.patterns).sort((a, b) => b[1] - a[1]).map(([p, n]) => (
+              <View key={p} style={styles.barRow}>
+                <Text style={styles.barLabel}>{p === "none" ? "legitimate (no pattern)" : humanize(p)}</Text>
+                <View style={styles.barTrack}>
+                  <View style={[styles.barFill, { width: `${(n / s.cases) * 100}%`,
+                    backgroundColor: p === "none" ? "#C9CED6" : p === "undocumented" ? C.fraud : C.text }]} />
+                </View>
+                <Text style={styles.barValue}>{n}</Text>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
+        </Panel>
+      ) : null}
+
+      <Panel title="Case queue" pad={false}>
+        {cases.data ? <CaseTable rows={cases.data} /> : null}
+      </Panel>
     </AppShell>
   );
 }
 
 const styles = StyleSheet.create({
-  stats: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 18,
-  },
-
-  panel: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    marginTop: 28,
-    overflow: "hidden",
-  },
-
-  panelHeader: {
-    padding: 22,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-
-  panelTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#111827",
-  },
-
-  panelSubtitle: {
-    color: "#6B7280",
-    marginTop: 5,
-    fontSize: 13,
-  },
-
-  tableHeader: {
-    flexDirection: "row",
-    paddingHorizontal: 22,
-    paddingVertical: 13,
-    backgroundColor: "#F9FAFB",
-  },
-
-  tableRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-  },
-
-  headerCell: {
-    flex: 1,
-    color: "#6B7280",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-
-  cell: {
-    flex: 1,
-    color: "#374151",
-    fontSize: 13,
-  },
-
-  caseColumn: {
-    flex: 0.8,
-  },
-
-  customerColumn: {
-    flex: 1.3,
-  },
-
-  highRisk: {
-    color: "#DC2626",
-    fontWeight: "700",
-  },
-
-  mediumRisk: {
-    color: "#D97706",
-    fontWeight: "700",
-  },
+  stats: { flexDirection: "row", flexWrap: "wrap", gap: 14 },
+  bars: { gap: 10 },
+  barRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  barLabel: { width: 220, color: C.text2, fontSize: 13 },
+  barTrack: { flex: 1, height: 6, backgroundColor: C.lineSoft, borderRadius: 3, overflow: "hidden" },
+  barFill: { height: 6, borderRadius: 3 },
+  barValue: { width: 28, textAlign: "right", fontFamily: MONO, fontSize: 12.5, color: C.text },
 });
