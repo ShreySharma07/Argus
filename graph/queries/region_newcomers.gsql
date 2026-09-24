@@ -1,0 +1,23 @@
+USE GRAPH {GRAPH}
+CREATE OR REPLACE QUERY region_newcomers(VERTEX<BillingRegion> region, DATETIME start_ts, DATETIME end_ts, INT max_cards = 50) FOR GRAPH {GRAPH} {
+  // Cards active in the region during the window that had never transacted there before it.
+  // A cluster of newcomers (esp. with fraud history) suggests a shared-origin ring (policy R6).
+  SumAccum<INT> @win;
+  SumAccum<INT> @prior;
+  SumAccum<DOUBLE> @win_amt;
+  SetAccum<STRING> @channels;
+  SetAccum<STRING> @fraud_cases;
+  SumAccum<INT> @@active_cards;
+  R = {region};
+  T = SELECT t FROM R:r -(REGION_OF>)- Transaction:t WHERE t.ts <= end_ts;
+  K = SELECT k FROM T:t -(MADE_BY>)- Card:k
+      ACCUM IF t.ts >= start_ts THEN k.@win += 1, k.@win_amt += t.amount, k.@channels += t.channel
+            ELSE k.@prior += 1 END;
+  A = SELECT k FROM K:k WHERE k.@win > 0 POST-ACCUM @@active_cards += 1;
+  N = SELECT k FROM A:k WHERE k.@prior == 0;
+  F = SELECT k FROM N:k -(CARD_CASE>)- ClosedCase:cc
+      WHERE cc.outcome == "confirmed_fraud" ACCUM k.@fraud_cases += cc.id + ":" + cc.pattern;
+  N = SELECT k FROM N:k ORDER BY k.@win DESC LIMIT max_cards;
+  PRINT region.id AS region, @@active_cards AS active_cards;
+  PRINT N[N.id, N.@win AS n_txns, N.@win_amt AS amount, N.@channels AS channels, N.@fraud_cases AS fraud_cases] AS newcomers;
+}

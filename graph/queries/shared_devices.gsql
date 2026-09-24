@@ -1,0 +1,31 @@
+USE GRAPH {GRAPH}
+CREATE OR REPLACE QUERY shared_devices(VERTEX<Card> card, DATETIME start_ts, DATETIME end_ts, INT max_cards = 50) FOR GRAPH {GRAPH} {
+  // Device profiles this card used in the window, how common each is overall, and the
+  // other cards that used them in the same window (with their confirmed-fraud history).
+  SetAccum<STRING> @all_cards;
+  SetAccum<STRING> @win_cards;
+  SumAccum<INT> @win_txns;
+  SetAccum<STRING> @dev;
+  OrAccum @in_win;
+  SumAccum<INT> @n;
+  SumAccum<DOUBLE> @amt;
+  SetAccum<STRING> @devs;
+  MinAccum<DATETIME> @first_ts;
+  SetAccum<STRING> @fraud_cases;
+  S = {card};
+  T = SELECT t FROM S:c -(MADE>)- Transaction:t WHERE t.ts >= start_ts AND t.ts <= end_ts;
+  D = SELECT d FROM T:t -(FROM_DEVICE>)- DeviceProfile:d;
+  OT = SELECT t FROM D:d -(DEVICE_OF>)- Transaction:t
+       ACCUM d.@all_cards += t.card_id,
+             IF t.ts >= start_ts AND t.ts <= end_ts THEN
+               t.@in_win += TRUE, t.@dev += d.id, d.@win_cards += t.card_id, d.@win_txns += 1
+             END;
+  WC = SELECT k FROM OT:t -(MADE_BY>)- Card:k
+       WHERE t.@in_win AND k != card
+       ACCUM k.@n += 1, k.@amt += t.amount, k.@devs += t.@dev, k.@first_ts += t.ts;
+  F = SELECT k FROM WC:k -(CARD_CASE>)- ClosedCase:cc
+      WHERE cc.outcome == "confirmed_fraud" ACCUM k.@fraud_cases += cc.id + ":" + cc.pattern;
+  WC = SELECT k FROM WC:k ORDER BY k.@n DESC LIMIT max_cards;
+  PRINT D[D.id, D.@all_cards.size() AS cards_all_time, D.@win_cards.size() AS cards_in_window, D.@win_txns AS txns_in_window] AS devices;
+  PRINT WC[WC.id, WC.@n AS n_txns, WC.@amt AS amount, WC.@devs AS devices, WC.@first_ts AS first_ts, WC.@fraud_cases AS fraud_cases] AS other_cards;
+}

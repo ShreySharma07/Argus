@@ -54,12 +54,11 @@ ALLOWED_TOOLS = frozenset({
     "tigergraph__upsert_vectors",
 })
 
-# Installed queries the agent may run (CLAUDE.md §3). Pattern detectors are
-# matched by prefix since their names depend on the dataset README.
+# Installed queries the agent may run (graph/queries/*.gsql, CLAUDE.md §3).
 ALLOWED_QUERIES = frozenset({
-    "entity_profile", "txn_neighborhood", "shared_entities", "velocity_window",
-    "ring_detect", "entity_centrality", "similar_cases",
-    "upsert_case", "add_evidence", "add_action", "policy_search",
+    "card_profile", "card_activity", "shared_devices", "region_newcomers",
+    "similar_cases", "case_vector_search", "policy_search",
+    "upsert_case", "add_evidence", "add_action",  # write-back (M4)
 })
 ALLOWED_QUERY_PREFIXES = ("pattern_",)
 

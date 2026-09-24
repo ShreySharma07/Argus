@@ -1,0 +1,9 @@
+USE GRAPH {GRAPH}
+CREATE OR REPLACE QUERY case_vector_search(LIST<FLOAT> qv, INT k = 10) FOR GRAPH {GRAPH} {
+  // Closed cases whose analyst notes are semantically closest to the query (cosine distance).
+  MapAccum<VERTEX, FLOAT> @@dist;
+  hits = vectorSearch({ClosedCase.notes_emb}, qv, k, {distance_map: @@dist});
+  PRINT hits[hits.id, hits.card_id, hits.outcome, hits.pattern, hits.exposure_usd, hits.closed_at,
+             hits.actions_taken, hits.report_filed, hits.analyst_notes] AS cases;
+  PRINT @@dist AS distances;
+}
