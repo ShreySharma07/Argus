@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.1,
+    "fraud_probability": 0.35,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -13,7 +13,7 @@
     "exposure_usd": 0,
     "evidence": [
       {
-        "claim": "Flagged txn 3530164 is $49.00 in-person, product W, region 330 \u2014 matching 95% in-person / 95% product-W history and a region with 42 prior transactions on this card; amount is 0.38x the card mean of $128.84 (z = -0.49).",
+        "claim": "Flagged txn 3530164 is $49.00 in-person, product W, region 330, country 87, risk 0.40, amount_vs_mean 0.38 and amount_z -0.49 - below the card's $128.84 mean and far below its $2,680.95 max.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -22,7 +22,25 @@
         ]
       },
       {
-        "claim": "Card baseline over 180d: 980 txns, 931 in-person, mean $128.84, region 330 among established usage; nothing about the flagged charge is new (new_region_for_card = false, new_device_for_card = false).",
+        "claim": "Region 330 is not new for the card: 42 prior transactions in history and the card was used there on 2016-12-03, 12-07, 12-09 and 12-10; 95% of the card's 980 baseline transactions are in-person and 95% product W, matching the flagged charge exactly.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C08623-K2",
+          "3530164"
+        ]
+      },
+      {
+        "claim": "The cardholder's own acknowledged purchase 3530056 ($116.93, region 330, 2016-12-10 12:12) sits 49 minutes before the disputed charge in the same region, leaving no window for a separate clone to operate; 13 home-region transactions occurred within 48h.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3530056",
+          "3530164"
+        ]
+      },
+      {
+        "claim": "Recurrence check shows 56 prior transactions at the same amount across 2016-07 through 2016-12 (e.g. 3487397, 3499168, 3511680, 3515518) with short day gaps - a habitual small-ticket amount for this card, though not strictly monthly (looks_monthly=false).",
         "source": "graph",
         "ref": "query:card_profile",
         "entity_ids": [
@@ -30,59 +48,40 @@
         ]
       },
       {
-        "claim": "Signals show 56 prior transactions at the same amount spanning 2016-07 through 2016-12, i.e. a habitual repeat charge, with prior examples 3487397, 3499168, 3499956, 3501732, 3511680, 3515518.",
-        "source": "graph",
-        "ref": "query:card_activity",
+        "claim": "Customer C08623 maintains the denial but concedes being in region 330 and using the card there at ~12:12 that day, and reports no known $49.00 subscription - a denial of recollection rather than of presence.",
+        "source": "customer",
+        "ref": "evidence_request:1",
         "entity_ids": [
-          "C08623-K2"
-        ]
-      },
-      {
-        "claim": "Card was used in region 330 on four separate days in the prior week (12-03, 12-07, 12-09, 12-10) with 13 home-area transactions inside 48h \u2014 no clone/out-of-region signature.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3521954",
-          "3522026",
-          "3527215",
-          "3530056",
+          "C08623",
           "3530164"
         ]
       },
       {
-        "claim": "Episode window contains zero online transactions, no sub-$5 authorization runs and no just-under-threshold runs, ruling out card_testing and CNP patterns.",
+        "claim": "The shared device profile 'Trident/7.0 | Windows 10 | ie 11.0 for desktop | 1440x900' appears on 33 cards all-time (5 in window), so it is not rare; none of the 22 episode transactions on this card carry any device, proxy or online channel (online_txns_in_episode=0), so the linked fraud cards (C06208-K1, C05600-K1, C09557-K1, C00854-K2) are not connected to this activity.",
         "source": "graph",
-        "ref": "query:card_activity",
+        "ref": "query:shared_devices",
         "entity_ids": [
-          "C08623-K2"
+          "C06208-K1",
+          "C05600-K1",
+          "C09557-K1",
+          "C00854-K2"
         ]
       },
       {
-        "claim": "Prior confirmed fraud on this same card (CC-2935, CC-2817, CC-3682, CC-4957 out_of_region_use; CC-3327 account_takeover) all involved regions with no history or mixed-channel activity \u2014 a different signature from this in-region, in-channel charge. CC-1589 on the same card was cleared after customer confirmation.",
+        "claim": "Prior confirmed fraud on this same card was card-present use in regions with no history (CC-2935, CC-4957, CC-2817, CC-3682) or mixed-channel takeover (CC-3327); the current charge shows neither a new region (new_region_for_card=false) nor any online/mixed-channel component. A prior alert on this card (CC-1589) was cleared after the cardholder confirmed activity.",
         "source": "graph",
         "ref": "query:similar_cases",
         "entity_ids": [
           "CC-2935",
+          "CC-4957",
           "CC-2817",
           "CC-3682",
-          "CC-4957",
           "CC-3327",
           "CC-1589"
         ]
       },
       {
-        "claim": "The shared Trident/7.0 | Windows 10 | ie 11.0 for desktop | 1440x900 profile is not rare (33 cards all-time) and the flagged transaction has no device recorded, so the link to C06208-K1, C09557-K1, C05600-K1 and C00854-K2 does not attach to this charge.",
-        "source": "graph",
-        "ref": "query:shared_devices",
-        "entity_ids": [
-          "C06208-K1",
-          "C09557-K1",
-          "C05600-K1",
-          "C00854-K2"
-        ]
-      },
-      {
-        "claim": "Region 330 newcomer fraud-history rate is 0.16 against a 0.10 base rate, and this card is not a newcomer to region 330 (42 prior txns), so the cluster signal does not implicate it.",
+        "claim": "Region 330 newcomer cluster is weak: fraud-history rate among newcomers 0.16 vs 0.10 base rate, and this card is not a newcomer to the region.",
         "source": "graph",
         "ref": "query:region_newcomers",
         "entity_ids": [
@@ -90,41 +89,32 @@
         ]
       },
       {
-        "claim": "Policy R7 directs CREATE_CASE, VERIFY_WITH_CUSTOMER and WARN_CUSTOMER \u2014 not a block \u2014 when a disputed charge matches the cardholder's own recurring pattern.",
+        "claim": "Policy R7 covers a disputed charge that matches the cardholder's own recurring pattern: create a case, verify and warn, do not block.",
         "source": "document",
         "ref": "policy:R7",
         "entity_ids": [
           "3530164"
         ]
-      },
-      {
-        "claim": "Customer confirms the $49.00 charge as their own after being shown the recurring history, withdrawing the dispute (policy R3 then applies).",
-        "source": "customer",
-        "ref": "evidence_request:1",
-        "entity_ids": [
-          "3530164",
-          "C08623"
-        ]
       }
     ],
     "similar_prior_cases": [
+      "CC-1589",
       "CC-2935",
+      "CC-4957",
       "CC-2817",
       "CC-3682",
-      "CC-4957",
       "CC-3327",
-      "CC-1589",
       "CC-0516"
     ],
-    "summary": "Customer C08623 disputes a $49.00 in-person charge (3530164) in region 330 on 2016-12-10. Everything structural points the other way: the channel, product, region and amount are all core to this card's 980-transaction baseline, the card has 42 prior transactions in region 330 including four days in the past week, and the same $49 amount has been charged 56 times across all six months of history. The customer has genuine prior fraud on this card, but every confirmed case was out-of-region card-present use or mixed-channel takeover \u2014 neither signature is present here, and there are no online transactions, no testing runs and no new device in the window. The rare-device and region-cluster links are too weak to attach (33 cards all-time on the device profile; no device recorded on the flagged transaction). Treat as a likely misrecognised recurring charge: open a case, verify with the customer and warn them, do not block.",
+    "summary": "Customer C08623 disputes a $49.00 card-present purchase (3530164) in region 330 on 2016-12-10. The charge is in the card's dominant channel and product, in a region with 42 prior transactions used on four days that week, for an amount the card has seen 56 times since July, and it occurred 49 minutes after a purchase the cardholder confirms making in the same region. On verification the cardholder maintained the denial but conceded being in region 330 and using the card there shortly before, which reads as failure to recognise a small routine charge rather than a third party's use. The shared IE/Trident device profile touches 33 cards all-time and none of this card's episode transactions carry a device, so the linked fraud cards do not connect to this activity. Prior confirmed fraud on this card was out-of-region or mixed-channel, neither of which is present. Assessment: legitimate at 0.35 - open a case for the dispute, warn the cardholder about the recurring small-ticket charge, keep the card monitored, no block and no report (exposure $49, no shared origin).",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-003"
   },
   "evidence_requests": [
     {
       "type": "customer_validation",
-      "asked_after_step": 4,
-      "assumed_response": "Customer, shown the merchant and the 56 prior same-amount charges at this location, recognises the $49.00 purchase as their own routine spend and withdraws the dispute."
+      "asked_after_step": 5,
+      "assumed_response": "The cardholder maintains they did not make the $49.00 charge; while they acknowledge being in region 330 that day and using the card there around 12:12, they say they do not recognise the 13:01 purchase and do not have any $49.00 subscription, fuel or transit arrangement they are aware of."
     }
   ],
   "next_best_actions": {
@@ -162,7 +152,7 @@
         "reason": "R3: customer recognises the recurring charge"
       }
     ],
-    "what_changed": "The assumed customer confirmation moved the assessment from legitimate-but-disputed (0.25) to legitimate (0.10) and converts the recommended handling from R7 verification to R3 close-no-fraud with a warning note."
+    "what_changed": "The verification reply kept the denial alive - which prevents a clean clear and nudges probability from 0.30 to 0.35 - but it also confirmed the cardholder was in region 330 and used the card there minutes earlier, which strengthens the legitimate reading of the 13:01 charge."
   },
   "sar": {
     "file": false,
@@ -172,8 +162,8 @@
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "Fraud probability is at or below 0.15 supported by several independent pieces (in-region/in-channel/in-amount baseline fit, 56 prior same-amount charges, absence of any prior-fraud signature) and the verification response settles the dispute; further steps would not change the decision.",
-  "tool_calls": 10,
-  "tokens": 17678,
-  "latency_s": 57.6
+  "stop_reason": "Verification settled the question: customer_validation -> denies (policy \u00a76). Verification has been obtained and the cardholder's own reply places them in the region using the card minutes earlier; with exposure of $49, no device or online footprint and no new-region signal, no further evidence request could plausibly move the verdict (policy:s6).",
+  "tool_calls": 11,
+  "tokens": 43285,
+  "latency_s": 109.4
 }

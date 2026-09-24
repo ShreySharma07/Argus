@@ -5,7 +5,7 @@
     "verdict": "fraud",
     "fraud_probability": 0.89,
     "pattern": "undocumented",
-    "pattern_description": "Four card-not-present purchases of the same product type were pushed through within 30 minutes, each deliberately priced just below a $500 round authorization threshold ($478.95, $456.96, $488.04, $482.12), rotating between two devices, two email domains and a transparent proxy while the legitimate cardholder kept transacting in person at home. The threshold-shaving and credential rotation indicate a scripted abuse of authorization limits rather than an ordinary CNP burst, so it is recorded as undocumented per R9.",
+    "pattern_description": "Four online card-not-present authorizations on the same card within 30 minutes, each deliberately priced just under a $500 round authorization threshold ($456.96-$488.04), split across two 'New'-flagged devices, two email domains and two billing regions (264 and 476, one pair behind a transparent proxy). The splitting and threshold-hugging looks like an attempt to keep every single charge below an authorization/review limit while extracting ~$1.9k in one sitting, rather than a plain CNP burst.",
     "affected_txn_ids": [
       "3476602",
       "3476633",
@@ -18,7 +18,7 @@
     "exposure_usd": 1906.07,
     "evidence": [
       {
-        "claim": "Customer C07297 disputes the $482.12 online purchase 3476682 of 2016-11-21 20:30.",
+        "claim": "Cardholder C07297 explicitly disputes the $482.12 charge 3476682 ('I never made this purchase').",
         "source": "customer",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -27,7 +27,7 @@
         ]
       },
       {
-        "claim": "Four online product-C transactions in 30 minutes (3476602 $478.95, 3476633 $456.96, 3476665 $488.04, 3476682 $482.12) are all just under $500; total exposure $1,906.07.",
+        "claim": "Four online product-C authorizations in 30 minutes (20:00-20:30 on 2016-11-21) all priced just under $500: 478.95, 456.96, 488.04, 482.12; combined exposure $1,906.07.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -38,7 +38,7 @@
         ]
       },
       {
-        "claim": "Card baseline over 180 days: 199 txns, 194 in-person vs 5 online (2.5% online share), product C only 3 times (1.5%), mean $116.73 \u2014 the episode amounts are 3.9x-4.2x the mean (amount_z 2.71).",
+        "claim": "Baseline over 180d: 199 txns, 194 in-person / 5 online, products W=194 vs C=3; online share 2.5%, product C share 1.5%. The episode is entirely online product C.",
         "source": "graph",
         "ref": "query:card_profile",
         "entity_ids": [
@@ -46,7 +46,16 @@
         ]
       },
       {
-        "claim": "All four episode online txns carry device_new_flag 'New' for the account, split across two device strings, with two behind a TRANSPARENT proxy and two distinct email domains (gmail.com, yahoo.com).",
+        "claim": "Each episode amount is ~4x the card mean of $116.73 (amount_vs_mean 3.91-4.18, amount_z 2.71), though below the card max of $1,104.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C07297-K1",
+          "3476665"
+        ]
+      },
+      {
+        "claim": "All four online txns carry device_new_flag 'New'; 3476633 and 3476665 also run behind a TRANSPARENT proxy with a yahoo.com email from region 476, while 3476602/3476682 use a Windows 7 / IE 11 desktop with gmail.com from region 264.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -57,18 +66,16 @@
         ]
       },
       {
-        "claim": "Legitimate in-person activity continued around the burst (7 home txns within 48h, e.g. 3474057 $226.02 region 264 and 3477578 $82.97 region 315 at 02:07 on 2016-11-22), indicating parallel use of a stolen number rather than the cardholder.",
+        "claim": "Normal in-person home activity continues around the burst (3474057 $226.02 in region 264 on 11-20, 3477578 $82.97 in region 315 on 11-22; home_activity_within_48h = 7), so the card itself remained with the cardholder while the number was used online.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
           "3474057",
-          "3477578",
-          "3473012",
-          "3469605"
+          "3477578"
         ]
       },
       {
-        "claim": "No rare shared device link and region 264 newcomer fraud rate (0.10) equals the base rate (0.10), so no shared-origin ring evidence.",
+        "claim": "No rare shared device link: rare_shared_devices_total = 0 and no cards linked by device; region 264 newcomer fraud rate 0.10 equals the base rate, so no ring evidence.",
         "source": "graph",
         "ref": "query:shared_devices",
         "entity_ids": [
@@ -76,14 +83,39 @@
         ]
       },
       {
-        "claim": "R9 requires cases that fit none of the five known patterns but show repeated structured abuse to be documented in the investigator's own words with CREATE_CASE, FILE_REPORT and ESCALATE_TO_ANALYST; \u00a73a requires a report when exposure exceeds $1,000.",
+        "claim": "Recurring check fails: only one prior same-amount txn (3476602, same night), a single month, looks_monthly = false, so R7 does not apply.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "3476602",
+          "3476682"
+        ]
+      },
+      {
+        "claim": "Policy \u00a73a: exposure exceeds $1,000 and the pattern is undocumented/coordinated (R9), so a report accompanies the case.",
         "source": "document",
-        "ref": "policy:R9",
+        "ref": "policy:s3a",
         "entity_ids": []
+      },
+      {
+        "claim": "Semantically similar closed cases CC-4027, CC-2537, CC-2937, CC-4437 were all cleared after the cardholder confirmed a single large purchase; none involved a disputed multi-transaction sub-threshold burst, so they do not offset the structural evidence here.",
+        "source": "graph",
+        "ref": "query:case_vector_search",
+        "entity_ids": [
+          "CC-4027",
+          "CC-2537",
+          "CC-2937",
+          "CC-4437"
+        ]
       }
     ],
-    "similar_prior_cases": [],
-    "summary": "Customer C07297 disputes a $482.12 online purchase (3476682). The graph shows it is the last of four online product-C transactions placed within 30 minutes on 2016-11-21, each just below $500 ($478.95, $456.96, $488.04, $482.12; $1,906.07 total), all flagged as a New device for the account, spread over two device profiles, two email domains and a transparent proxy. The card is overwhelmingly an in-person card (194 of 199 txns, 5 online) and normal in-person spending continued at home before, during and after the burst, so the cardholder was not the one transacting online. The deliberate shaving under a round authorization threshold fits none of the five documented patterns and is recorded as undocumented under R9. Recommend blocking the card, opening a case, filing a report (exposure > $1,000, undocumented pattern) and escalating to an analyst; no shared-device or region-ring link was found.",
+    "similar_prior_cases": [
+      "CC-4027",
+      "CC-2537",
+      "CC-2937",
+      "CC-4437"
+    ],
+    "summary": "C07297 disputes a $482.12 online charge (3476682), and the graph shows it is the last of four online product-C authorizations fired between 20:00 and 20:30 on 2016-11-21, each just under $500 ($478.95, $456.96, $488.04, $482.12; $1,906.07 total). The card's 180-day baseline is 97.5% in-person, product W, averaging $116.73, so the channel, product and amounts are all out of character. All four carry a 'New' device flag, two of them behind a TRANSPARENT proxy with a different email domain and billing region (476), while genuine in-person spending continued in the cardholder's home regions before and after the burst. No rare shared device or region-ring link exists, so this looks like a single-card compromise where charges were deliberately kept under a round authorization threshold \u2014 coordinated/repeated abuse that fits none of the five documented patterns (R9). Recommend BLOCK_CARD, CREATE_CASE and FILE_REPORT (exposure > $1,000, undocumented pattern) with ESCALATE_TO_ANALYST.",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-006"
   },
@@ -138,7 +170,7 @@
   "sar": {
     "file": true,
     "reason": "File: exposure $1,906.07 exceeds $1,000 (\u00a73a, R2); coordinated, undocumented pattern (R9).",
-    "narrative": "This report documents suspected card-not-present payment fraud involving the deliberate structuring of online purchase amounts just below a $500 authorization threshold on card C07297-K1, issued to customer C07297. On 2016-11-21 between 20:00 and 20:30, four online purchases of the same product type (product C) were authorized on the card: transaction 3476602 for $478.95 at 20:00, transaction 3476633 for $456.96 at 20:10, transaction 3476665 for $488.04 at 20:24, and transaction 3476682 for $482.12 at 20:30, totaling $1,906.07. Customer C07297 contacted the bank and disputed transaction 3476682, the last of the four purchases. All four transactions were flagged as originating from a device that was new to the account, and they were spread across two distinct device strings, two different email domains (gmail.com and yahoo.com), with two of the four routed through a transparent proxy. The card's 180-day baseline shows 199 transactions, of which 194 were in person and only 5 online (2.5 percent online share), with product C appearing only three times (1.5 percent) and a mean transaction value of $116.73; each episode amount is approximately 3.9 to 4.2 times that mean, with an amount z-score of 2.71. Legitimate in-person activity on the same card continued in the cardholder's home regions before, during and after the online burst, including transaction 3474057 for $226.02 in region 264 and transaction 3477578 for $82.97 in region 315 at 02:07 on 2016-11-22, indicating that the card number was being used online in parallel with the genuine cardholder's physical use. The activity is suspicious because the amounts were consistently shaved just under a round $500 authorization limit, the purchases were compressed into a 30-minute window on a card that is overwhelmingly used in person, and credentials and devices were rotated across each attempt, which is consistent with scripted abuse of authorization limits rather than ordinary customer behavior. A review of shared devices found no rare shared-device link, and the newcomer fraud rate for region 264 (0.10) equals the base rate, so no shared-origin ring was identified. The total exposure is $1,906.07. The bank blocked card C07297-K1, opened a fraud case, filed this report because exposure exceeds $1,000 and the pattern is not one of the institution's documented typologies, and escalated the matter to an analyst for further investigation.",
+    "narrative": "This report concerns apparent unauthorized card-not-present activity on card C07297-K1, held by cardholder C07297, in which four online authorizations were deliberately priced just below a $500 round authorization threshold, totaling $1,906.07. On 2016-11-21 between 20:00 and 20:30, four online product-C authorizations were posted to the card: transaction 3476602 at 20:00 for $478.95, transaction 3476633 at 20:10 for $456.96, transaction 3476665 at 20:24 for $488.04, and transaction 3476682 at 20:30 for $482.12. The cardholder contacted the bank and explicitly disputed the $482.12 charge 3476682, stating they never made the purchase. All four authorizations carried a 'New' device flag; transactions 3476602 and 3476682 originated from a Windows 7 / Internet Explorer 11 desktop using a gmail.com email address billed to region 264, while transactions 3476633 and 3476665 ran behind a TRANSPARENT proxy using a yahoo.com email address billed to region 476. The card's 180-day baseline consists of 199 transactions, 194 in person and only 5 online, with 194 product W against 3 product C, so the online channel (2.5% of history) and product C (1.5% of history) are both out of character, and each episode amount is approximately four times the card mean of $116.73 (amount_z 2.71). Genuine in-person spending continued around the burst, including transaction 3474057 for $226.02 in region 264 on 2016-11-20 and transaction 3477578 for $82.97 in region 315 on 2016-11-22, with home_activity_within_48h of 7, indicating the physical card remained with the cardholder while the card number was used online. The method of operation was the splitting of roughly $1.9k of spend in a single sitting into four charges each held under $500 and spread across two newly seen devices, two email domains and two billing regions, consistent with an attempt to keep every charge below an authorization or review limit. No ring indicators were found: rare_shared_devices_total is 0, no other cards are linked by device, and the region 264 newcomer fraud rate of 0.10 equals the base rate. Recurring-payment checks do not apply, as the only prior same-amount transaction (3476602) occurred the same night and the activity is confined to a single month. Semantically similar closed cases CC-4027, CC-2537, CC-2937 and CC-4437 were cleared only after cardholders confirmed a single large purchase and do not match this disputed multi-transaction sub-threshold burst. Total exposure is $1,906.07; the bank blocked card C07297-K1, opened a fraud case, escalated the matter to an analyst, and is filing this report because exposure exceeds $1,000 and the pattern is undocumented and coordinated.",
     "subjects": [
       "C07297",
       "C07297-K1"
@@ -149,8 +181,8 @@
       "2016-11-21"
     ]
   },
-  "stop_reason": "Fraud probability 0.89 supported by five independent signals (dispute, 4-txn threshold-shaving burst, off-baseline channel/product/amount, New-device and proxy/email rotation, continuing home activity); \u00a76 stopping condition met.",
-  "tool_calls": 11,
-  "tokens": 17129,
-  "latency_s": 62.2
+  "stop_reason": "Decisive: p=0.89 with 5 independent signals and evidence confidence 0.72 (policy \u00a76). Fraud probability is 0.89 with five independent pieces of evidence (customer dispute, four sub-$500 online charges in 30 minutes, channel/product mismatch with a 199-txn baseline, New-device and proxy anomalies, concurrent home in-person activity); policy \u00a76 threshold met and further verification would not change the decision.",
+  "tool_calls": 12,
+  "tokens": 18129,
+  "latency_s": 64.8
 }

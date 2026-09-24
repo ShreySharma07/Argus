@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.87,
+    "fraud_probability": 0.82,
     "pattern": "card_not_present_new_device",
     "pattern_description": "",
     "affected_txn_ids": [
@@ -12,13 +12,11 @@
     ],
     "first_suspicious_txn_id": "3580804",
     "connected_card_ids": [],
-    "connected_device_profiles": [
-      "unknown | unknown | firefox 47.0 | unknown"
-    ],
+    "connected_device_profiles": [],
     "exposure_usd": 221.19,
     "evidence": [
       {
-        "claim": "Cardholder C08106 disputes the $128.33 online charge 3583227 dated 2016-12-29 01:53:54.",
+        "claim": "Cardholder C08106 explicitly denies the $128.33 charge 3583227 ('I never made this purchase'), a customer_report trigger opened 2016-12-29.",
         "source": "customer",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -28,26 +26,35 @@
         ]
       },
       {
-        "claim": "Flagged charge is 3.63x the 180d mean of $35.31 (amount_z 3.36); a second out-of-pattern online charge of $92.86 (2.63x mean) occurred ~24h earlier, forming a 2-transaction burst within 48h.",
+        "claim": "Flagged amount $128.33 is 3.63x the 180-day mean of $35.31 (std $27.72, z=3.36) over 209 transactions, just under the card max of $138.89.",
+        "source": "graph",
+        "ref": "query:card_profile",
+        "entity_ids": [
+          "C08106-K1",
+          "3583227"
+        ]
+      },
+      {
+        "claim": "Flagged txn used device 'unknown | unknown | firefox 47.0 | unknown', not in this card's history and marked New for the account; the card's usual devices are Windows/chrome 63.0 (22 txns) and similar.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
           "3583227",
-          "3580804",
           "C08106-K1"
         ]
       },
       {
-        "claim": "Flagged transaction ran from 'unknown | unknown | firefox 47.0 | unknown', absent from the card's 180d device history, with identity device_new_flag = New and a hotmail.com email (prior-night txn used gmail.com).",
+        "claim": "A second anomalous online charge 3580804 for $92.86 (2.63x mean, New device flag, gmail domain vs hotmail on the flagged txn) occurred 23.5h earlier on 2016-12-28, forming a 2-transaction burst within 48h totalling $221.19.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
+          "3580804",
           "3583227",
-          "3580804"
+          "C08106-K1"
         ]
       },
       {
-        "claim": "Same card C08106-K1 has a prior confirmed card-not-present fraud (CC-3778, $58.42, 2016-09-20), showing the number was previously compromised.",
+        "claim": "Prior closed case CC-3778 on this same card C08106-K1 was a confirmed card_not_present_fraud ($58.42, single unrecognized online purchase inconsistent with usual merchants/amounts), showing this card number has been compromised before.",
         "source": "graph",
         "ref": "query:similar_cases",
         "entity_ids": [
@@ -56,15 +63,20 @@
         ]
       },
       {
-        "claim": "Counter-evidence: the card shows 77 distinct devices across 209 online transactions in 180 days, so a previously unseen browser string is weak on its own; $128.33 is below the card's $138.89 historical max.",
+        "claim": "Counter-evidence: CC-0696 on the same card was cleared after the cardholder confirmed travel, and five semantically similar cases (CC-0865, CC-5164, CC-3168, CC-3465, CC-0893) were cleared as genuine purchases from a new phone - so the New-device flag alone is not proof.",
         "source": "graph",
-        "ref": "query:card_profile",
+        "ref": "query:case_vector_search",
         "entity_ids": [
-          "C08106-K1"
+          "CC-0696",
+          "CC-0865",
+          "CC-5164",
+          "CC-3168",
+          "CC-3465",
+          "CC-0893"
         ]
       },
       {
-        "claim": "The firefox 47.0 profile appears on 6 cards all-time but only 1 card in this window, and links to high-fraud cards run through generic strings, so no shared-origin cluster is established.",
+        "claim": "The flagged device profile appears on only 6 cards all-time and 1 card in the window, so it does not establish a shared-origin ring; the heavily shared strings in cards_linked_by_rare_device (e.g. 'Windows | unknown | firefox 60.0 | unknown', 39 cards) are generic and not used by this transaction.",
         "source": "graph",
         "ref": "query:shared_devices",
         "entity_ids": [
@@ -72,30 +84,12 @@
         ]
       },
       {
-        "claim": "Memory on this customer is mixed: CC-0696 on the same card was cleared after the cardholder confirmed travel, so a dispute is one signal, not proof.",
-        "source": "graph",
-        "ref": "query:similar_cases",
-        "entity_ids": [
-          "CC-0696",
-          "C08106-K1"
-        ]
-      },
-      {
-        "claim": "Policy R2: a customer denial supports BLOCK_CARD and CREATE_CASE; exposure of $221.19 is under $1,000 and no shared device cluster is shown, so no regulatory filing is required (\u00a73a).",
+        "claim": "Policy R2 applies: the customer denies the transaction, so BLOCK_CARD and CREATE_CASE are indicated; exposure of $221.19 is below $1,000 and there is no solid shared-device link, so no regulatory report is required.",
         "source": "document",
         "ref": "policy:R2",
         "entity_ids": [
           "3583227",
           "3580804"
-        ]
-      },
-      {
-        "claim": "Assumed reply: customer also denies the $92.86 charge 3580804 and any new-device use that week.",
-        "source": "customer",
-        "ref": "evidence_request:1",
-        "entity_ids": [
-          "3580804",
-          "C08106"
         ]
       }
     ],
@@ -103,35 +97,25 @@
       "CC-3778",
       "CC-0696",
       "CC-5499",
-      "CC-5168"
+      "CC-5168",
+      "CC-0865"
     ],
-    "summary": "Cardholder C08106 disputes a $128.33 online charge (3583227) placed 2016-12-29 from a browser profile never seen on the card and flagged New by the identity record. The graph shows it is not isolated: a $92.86 online charge the previous night (3580804) is also well above the card's $35.31 average, giving a classic two-transaction CNP burst inside 48h. The same card already carries a confirmed CNP fraud from September (CC-3778). The card's habit of using many devices (77 in 180d) and the fact that $128.33 sits below its historical max keep this short of certainty on graph evidence alone, so the companion charge was put to the customer. With the customer denying both, the episode reads as card-not-present fraud from a new device: block the card, open a case, total exposure $221.19; no regulatory filing since exposure is under $1,000 and no rare shared-device or region cluster is established.",
+    "summary": "C08106 disputes a $128.33 online purchase (3583227) made 2016-12-29 from a browser profile never seen on card C08106-K1 and flagged New for the account. The amount is 3.6x the cardholder's $35.31 average across 209 all-online transactions, and it is paired with a $92.86 charge the previous day (3580804) from another New device and a different email domain - a classic two-transaction CNP burst within 48 hours. This card already has a confirmed card-not-present fraud in memory (CC-3778), which makes re-use of a leaked number plausible. The rare-device graph links are generic strings and do not tie this episode to a specific ring, so exposure stays at $221.19 on this card alone. Recommend blocking the card and opening a case; a regulatory report is not warranted at this exposure without a shared-origin link.",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-004"
   },
-  "evidence_requests": [
-    {
-      "type": "customer_validation",
-      "asked_after_step": 4,
-      "assumed_response": "Customer states they also do not recognise the $92.86 online charge from 2016-12-28 and did not use a Firefox browser or any new device that week."
-    }
-  ],
+  "evidence_requests": [],
   "next_best_actions": {
     "initial": [
       {
-        "action": "VERIFY_WITH_CUSTOMER",
-        "route": "auto",
-        "reason": "\u00a75/\u00a76: p=0.70 is not decisive; verify before any block"
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denies the transaction; exposure $221.19 <= $2,500 -> L1"
       },
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "\u00a73a: a case is opened whenever evidence is requested"
-      },
-      {
-        "action": "MONITOR_CARD",
-        "route": "auto",
-        "reason": "R1: keep the card active but raise monitoring while verification is pending"
+        "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
       }
     ],
     "final": [
@@ -146,7 +130,7 @@
         "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
       }
     ],
-    "what_changed": "The customer's denial of the second $92.86 charge confirmed a two-transaction episode rather than one odd purchase, moving probability from 0.70 to 0.87 and settling the verdict as fraud."
+    "what_changed": "nothing"
   },
   "sar": {
     "file": false,
@@ -156,8 +140,8 @@
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "Verdict is fraud at 0.87 with at least two independent pieces of evidence (customer denial of both charges, out-of-pattern 48h burst from a new device, prior confirmed fraud on the same card); further steps would not change the action.",
-  "tool_calls": 9,
-  "tokens": 24814,
-  "latency_s": 56.1
+  "stop_reason": "Further evidence unlikely to change the decision; no new policy-approved request remains (p=0.82, confidence 0.87; policy \u00a76). Four independent signals (explicit cardholder denial, unseen/New device, 3.4-sigma amount, a matching same-shape charge 23h earlier) plus a prior confirmed CNP fraud on this exact card support a fraud verdict; a verification request would only restate the dispute the customer has already made, so further steps are unlikely to change the block decision.",
+  "tool_calls": 10,
+  "tokens": 24301,
+  "latency_s": 53.7
 }

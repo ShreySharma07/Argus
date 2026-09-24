@@ -16,7 +16,8 @@ SYSTEM = """You write Suspicious Activity Report narratives for a bank's fraud t
 a regulator must understand the activity without any other document. Cover WHO (customer and card IDs, linked cards,
 device profiles), WHAT happened, WHEN (dates and times), WHERE (channel, billing region, device), HOW it was carried out,
 and WHY it is suspicious, then the total amount and the actions taken. 6-12 sentences, plain factual prose, no
-speculation beyond the evidence, no headings or bullet points. Use only the IDs and figures given."""
+speculation beyond the evidence, no headings or bullet points. Use only the IDs and figures given. Refer to the
+customer as "the cardholder" or "they", never he/she (the data gives no gender)."""
 
 
 def draft_sar(record: dict, guidance: list[dict], usage: llm.Usage) -> SarDraft:

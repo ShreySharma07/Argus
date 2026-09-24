@@ -1,9 +1,9 @@
 """decide + policy_gate nodes: deterministic Fraud Policy engine (README "Fraud Policy" v1.0).
 
-Input: the validated assessment (verdict/probability before and after evidence, pattern,
-flags) and the exposure. Output: next_best_actions.initial / .final with the approval
-route of every action (config/policy_matrix.yaml), evidence requests, the SAR decision
-and the case status. The LLM never chooses actions or routes.
+Input: the round-1 assessment (graph evidence only -> next_best_actions.initial), the final
+assessment after the loop's evidence replies (-> .final), the replies themselves and the
+exposure. Every action carries its approval route (config/policy_matrix.yaml) and the rule
+behind it; the SAR decision and case status follow §3a. The LLM never chooses actions or routes.
 """
 
 from dataclasses import dataclass, field
@@ -120,47 +120,52 @@ def _initial_with_request(a, exposure: float, trigger: str, sig: dict) -> list[d
         _act(acts, "ESCALATE_TO_ANALYST", "§5: request information from an analyst before acting", exposure)
     else:
         name = "STEP_UP_AUTH" if online else "VERIFY_WITH_CUSTOMER"
-        rule = "R1" if a.single_signal and a.probability_before < threshold("r1_weak_signal_max_prob") else "§5/§6"
-        _act(acts, name, f"{rule}: p={a.probability_before:.2f} is not decisive; verify before any block", exposure)
+        rule = "R1" if a.single_signal and a.probability < threshold("r1_weak_signal_max_prob") else "§5/§6"
+        _act(acts, name, f"{rule}: p={a.probability:.2f} is not decisive; verify before any block", exposure)
     _act(acts, "CREATE_CASE", "§3a: a case is opened whenever evidence is requested", exposure)
-    if a.probability_before >= 0.5 and a.pattern != "card_testing":
+    if a.probability >= 0.5 and a.pattern != "card_testing":
         _act(acts, "MONITOR_CARD", "R1: keep the card active but raise monitoring while verification is pending", exposure)
-    if a.verdict_before == "uncertain" and exposure > threshold("r8_escalate_exposure_usd"):
+    if a.verdict == "uncertain" and exposure > threshold("r8_escalate_exposure_usd"):
         _act(acts, "ESCALATE_TO_ANALYST", f"R8: uncertain with exposure ${exposure:,.2f} > $500", exposure)
     return acts
 
 
-def plan(a, trigger: str, exposure: float, sig: dict, linked: bool) -> Plan:
+def _final(a, trigger: str, exposure: float, sig: dict, linked: bool, replies: list[dict]) -> tuple[list[dict], str]:
+    outcomes = [r["outcome"] for r in replies]
+    denied = trigger == "customer_report" or any(o in ("denies", "analyst_confirms_fraud") for o in outcomes)
+    confirmed = any(o in ("confirms", "analyst_clears") for o in outcomes)
+    no_reply = bool(outcomes) and outcomes[-1] == "no_reply"
+    if a.verdict == "fraud":
+        acts = _fraud_actions(a, exposure, linked, trigger, sig, after_denial=denied)
+        return acts, "escalated" if any(x["action"] == "ESCALATE_TO_ANALYST" for x in acts) else "closed_fraud"
+    if a.verdict == "legitimate":
+        return _legit_actions(a, exposure, trigger), "closed_legitimate"
+    if denied and not confirmed and not a.recurring_legit_charge:
+        # R2 is unconditional on a denial; uncertainty about the pattern goes to an analyst (R8).
+        acts = [x for x in _fraud_actions(a, exposure, linked, trigger, sig, after_denial=True)
+                if x["action"] != "FILE_REPORT"]  # §3a: no report until fraud is confirmed/strongly suspected
+        _act(acts, "ESCALATE_TO_ANALYST", "R8: customer denies but the evidence conflicts; analyst to confirm", exposure)
+        return acts, "escalated"
+    acts = _uncertain_actions(a, exposure, trigger, no_reply)
+    return acts, "escalated" if any(x["action"] == "ESCALATE_TO_ANALYST" for x in acts) else "open"
+
+
+def plan(a1, af, trigger: str, exposure: float, sig: dict, linked: bool, replies: list[dict]) -> Plan:
+    """a1: round-1 assessment; af: final assessment; replies: [{type, outcome, text, asked_after_step}]."""
     p = Plan()
-    if a.request_evidence and a.evidence_type != "none":
-        p.evidence_requests = [{"type": a.evidence_type, "asked_after_step": 4, "assumed_response": a.assumed_response}]
-        p.initial = _initial_with_request(a, exposure, trigger, sig)
-        verdict, prob = a.verdict_after, a.probability_after
-        denied = a.response_outcome in ("denies", "analyst_confirms_fraud")
-        no_reply = a.response_outcome == "no_reply"
+    p.final, p.status = _final(af, trigger, exposure, sig, linked, replies)
+    if replies:
+        p.evidence_requests = [{"type": r["type"], "asked_after_step": r["asked_after_step"],
+                                "assumed_response": r["text"]} for r in replies]
+        p.initial = _initial_with_request(a1, exposure, trigger, sig)
     else:
-        verdict, prob = a.verdict_before, a.probability_before
-        denied, no_reply = trigger == "customer_report", False
-
-    if verdict == "fraud":
-        p.final = _fraud_actions(a, exposure, linked, trigger, sig, after_denial=denied)
-        esc = any(x["action"] == "ESCALATE_TO_ANALYST" for x in p.final)
-        p.status = "escalated" if esc else "closed_fraud"
-    elif verdict == "legitimate":
-        p.final = _legit_actions(a, exposure, trigger)
-        p.status = "closed_legitimate"
-    else:
-        p.final = _uncertain_actions(a, exposure, trigger, no_reply)
-        p.status = "escalated" if any(x["action"] == "ESCALATE_TO_ANALYST" for x in p.final) else "open"
-
-    if not p.evidence_requests:
         p.initial = [dict(x) for x in p.final]
-    p.verdict, p.probability = verdict, round(min(max(prob, 0.0), 1.0), 2)
-    p.sar_file, p.sar_reason = _sar(verdict, p.probability, exposure, a, linked)
+    p.verdict, p.probability = af.verdict, round(min(max(af.probability, 0.0), 1.0), 2)
+    p.sar_file, p.sar_reason = _sar(af.verdict, p.probability, exposure, af, linked)
     if p.sar_file and not any(x["action"] == "FILE_REPORT" for x in p.final):
         p.sar_file = False
-        p.sar_reason = (f"No report yet: verdict is {verdict} (p={p.probability:.2f}); §3a requires confirmed or strongly "
+        p.sar_reason = (f"No report yet: verdict is {af.verdict} (p={p.probability:.2f}); §3a requires confirmed or strongly "
                         f"suspected fraud, so the case is escalated/open and a report follows only if the analyst confirms.")
-    if not p.sar_file and verdict == "legitimate":
+    if not p.sar_file and af.verdict == "legitimate":
         p.sar_reason = "No report: activity assessed as legitimate (R3); §3a filing conditions do not apply."
     return p

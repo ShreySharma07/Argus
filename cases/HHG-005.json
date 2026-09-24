@@ -3,7 +3,7 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.12,
+    "fraud_probability": 0.08,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
@@ -13,16 +13,17 @@
     "exposure_usd": 0,
     "evidence": [
       {
-        "claim": "Flagged txn 3523199 is $100.07, 0.56x the card's 180d mean of $177.52 (amount_z -0.34) and far below the card max of $1,104.08 \u2014 no amount escalation.",
-        "source": "graph",
-        "ref": "query:card_activity",
+        "claim": "Step-up authentication passed: the cardholder completed the one-time passcode challenge and confirmed the $100.07 online purchase of 2016-12-07 was made by them on their own iOS device, noting they routinely use several devices.",
+        "source": "customer",
+        "ref": "evidence_request:1",
         "entity_ids": [
           "3523199",
-          "C02923-K1"
+          "C02923-K1",
+          "C02923"
         ]
       },
       {
-        "claim": "The transaction is in region 330, the card's home region (85 of 90 baseline txns), and the card was used in that region on 2016-12-02, 12-03 and 12-07 \u2014 home activity is continuous, no out-of-region clone signature.",
+        "claim": "The flagged amount is below the card's norm: $100.07 against a 180d mean of $177.52 (amount_z -0.34, 0.56x mean, card max $1,104.08), so no value anomaly.",
         "source": "graph",
         "ref": "query:card_profile",
         "entity_ids": [
@@ -31,7 +32,16 @@
         ]
       },
       {
-        "claim": "Only one transaction in the episode window; no burst of 2-4 online charges in 48h, no tiny-authorization run (card_testing_runs empty) and no just-under-$500 run.",
+        "claim": "Transaction is in the card's home region 330 (85 of 90 baseline txns) and home country 87 (90 of 90); new_region_for_card is false and the card was already used in region 330 on 2016-12-02, 12-03 and 12-07.",
+        "source": "graph",
+        "ref": "query:card_activity",
+        "entity_ids": [
+          "3523199",
+          "C02923-K1"
+        ]
+      },
+      {
+        "claim": "Episode window contains exactly one online transaction; no card-testing run (<$5 authorizations), no just-under-$500 run, no 2-4 transaction burst - so pattern 2/3 lacks its defining burst.",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
@@ -39,24 +49,25 @@
         ]
       },
       {
-        "claim": "Device 'iOS Device | iOS 9.3.5 | mobile safari 9.0 | 1024x768' is New for this account (device_in_card_history false), but there is no proxy and the card baseline already shows 19 distinct devices \u2014 a high device-churn cardholder.",
+        "claim": "The card has 19 distinct devices in 180 days with no dominant device (top device used only twice), so a New device flag is weakly informative for this account; no proxy was recorded.",
         "source": "graph",
-        "ref": "query:card_activity",
+        "ref": "query:card_profile",
         "entity_ids": [
-          "3523199",
+          "C02923-K1",
+          "3523199"
+        ]
+      },
+      {
+        "claim": "The only rare shared device ('Windows | Windows 7 | chrome 64.0 | 1600x900', 53 cards all-time, 2 in window, linked to C00854-K2) does not appear on the flagged transaction, which used 'iOS Device | iOS 9.3.5 | mobile safari 9.0 | 1024x768'; the link is therefore not evidence about this transaction.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "C00854-K2",
           "C02923-K1"
         ]
       },
       {
-        "claim": "The only rare-device candidate, 'Windows | Windows 7 | chrome 64.0 | 1600x900', has 53 cards all-time (common) and was not used on the flagged transaction; the fraud-heavy card C00854-K2 links only through that unrelated profile.",
-        "source": "graph",
-        "ref": "query:shared_devices",
-        "entity_ids": [
-          "C00854-K2"
-        ]
-      },
-      {
-        "claim": "Region 330 newcomer cluster shows a 0.13 fraud-history rate among 30 newcomers versus a 0.10 base rate, and this card is not a newcomer there \u2014 negligible cluster signal.",
+        "claim": "Region 330 newcomer fraud rate is 0.13 versus a 0.10 base rate across 275 active cards - a negligible lift, and this card is not a newcomer to region 330.",
         "source": "graph",
         "ref": "query:region_newcomers",
         "entity_ids": [
@@ -64,71 +75,75 @@
         ]
       },
       {
-        "claim": "Same card has three confirmed account-takeover cases in Aug 2016 (CC-2400 $350.99, CC-2717 $896.08, CC-2857 $539.97), all featuring multi-transaction mixed-channel bursts \u2014 a raised prior, but no matching signature here.",
+        "claim": "Five structurally linked closed cases with higher model scores ($50.06 at 0.85, $200.06 at 0.90, $150.01 at 0.94, $99.93 at 0.85, $49.95 at 0.84) were all cleared after the cardholder confirmed a new phone or travel.",
         "source": "graph",
         "ref": "query:similar_cases",
         "entity_ids": [
-          "C02923-K1",
-          "CC-2400",
-          "CC-2717",
-          "CC-2857"
+          "CC-0219",
+          "CC-0189",
+          "CC-0965",
+          "CC-0374",
+          "CC-5035"
         ]
       },
       {
-        "claim": "Structural and semantic memory of new-device alerts at similar amounts (CC-0219 $50.06, CC-0189 $200.06, CC-3520 $49.99, CC-0010 $96.95, CC-5462 $149.93) all closed as cleared after the cardholder confirmed a new phone.",
+        "claim": "Semantic memory returns five near-identical narratives (CC-3520, CC-0010, CC-0871, CC-5462, CC-0831, similarity 0.78-0.79), all cleared as legitimate purchases from a new phone.",
         "source": "graph",
         "ref": "query:case_vector_search",
         "entity_ids": [
-          "CC-0219",
-          "CC-0189",
           "CC-3520",
           "CC-0010",
-          "CC-5462"
+          "CC-0871",
+          "CC-5462",
+          "CC-0831"
         ]
       },
       {
-        "claim": "Policy R1 requires VERIFY_WITH_CUSTOMER or STEP_UP_AUTH before any block when the case rests on a single signal and probability is below 0.70.",
-        "source": "document",
-        "ref": "policy:R1",
-        "entity_ids": []
-      },
-      {
-        "claim": "Customer confirms the $100.07 purchase was made by them from a newly purchased iPhone and reports no other unrecognised charges; under R3 this closes the alert as no fraud.",
-        "source": "customer",
-        "ref": "evidence_request:1",
+        "claim": "Prior confirmed account-takeover cases on this same card (CC-2400 $350.99, CC-2717 $896.08, CC-2857 $539.97) all date from 18-30 August 2016 and involved 2-6 mixed-channel transactions; the December alert is a single same-region online charge and does not match that signature.",
+        "source": "graph",
+        "ref": "query:similar_cases",
         "entity_ids": [
-          "3523199",
+          "CC-2400",
+          "CC-2717",
+          "CC-2857",
           "C02923-K1"
         ]
+      },
+      {
+        "claim": "Policy R3 directs CLOSE_NO_FRAUD when the customer confirms the transaction; policy \\u00a76 permits stopping once probability is at or below 0.15 with at least two independent pieces of evidence.",
+        "source": "document",
+        "ref": "policy:R3",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
-      "CC-2400",
-      "CC-2717",
-      "CC-2857",
       "CC-0219",
       "CC-0189",
+      "CC-0374",
+      "CC-0965",
+      "CC-5035",
       "CC-3520",
-      "CC-0010",
-      "CC-5462"
+      "CC-2400",
+      "CC-2717",
+      "CC-2857"
     ],
-    "summary": "Case HHG-005 is a model-score alert on a single $100.07 online purchase (txn 3523199) on card C02923-K1. Everything except the device fits the cardholder: home region 330, amount 0.56x the card mean, an existing product type, no proxy, continuing home activity, and no burst or tiny-authorization sequence. The device is New for the account, but the card already shows 19 devices in 180 days and the bank's closed cases repeatedly clear this exact shape after the cardholder confirms a new phone. The apparent link to fraud-heavy card C00854-K2 runs through a common device profile (53 cards all-time) that was not used on this transaction, so there is no shared-origin case under R6. The card's three August account-takeover cases raise the prior, but those were multi-transaction mixed-channel episodes unlike this one. Verification was requested under R1; the customer confirmed the purchase, so the alert closes as no fraud with the new device added to the profile and a light watch given the card's history.",
+    "summary": "Case HHG-005 was opened on a model score alone (0.54) for a $100.07 online transaction 3523199 on card C02923-K1. The only genuine anomaly was that the iOS device was New for the account, but the card has used 19 devices in 180 days, the amount is below its mean, and the transaction sits in the card's home region 330 and home country 87 with no burst, no tiny-authorization run and no proxy. A step-up authentication challenge was issued under policy R1; the cardholder passed the one-time passcode and confirmed the purchase, stating they routinely use several devices. This matches a large body of closed cases (CC-0219, CC-0189, CC-3520 and others) cleared on identical facts, and it does not resemble this customer's August 2016 account-takeover episodes (CC-2400, CC-2717, CC-2857), which were multi-transaction and mixed-channel. The rare-device link to C00854-K2 involves a Windows profile that does not appear on this transaction and should not drive action here. Recommend CLOSE_NO_FRAUD under R3 and add the iOS device profile to the account.",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-005"
   },
   "evidence_requests": [
     {
-      "type": "customer_validation",
-      "asked_after_step": 4,
-      "assumed_response": "Customer confirms they made the $100.07 online purchase on 2016-12-07 from a new iPhone they recently bought; they recognise the charge and report no other unrecognised activity."
+      "type": "step_up_auth",
+      "asked_after_step": 5,
+      "assumed_response": "The cardholder completed the one-time passcode challenge successfully and confirmed the $100.07 online purchase of 2016-12-07 was made by them on their own iOS device, noting they routinely use several devices."
     }
   ],
   "next_best_actions": {
     "initial": [
       {
-        "action": "VERIFY_WITH_CUSTOMER",
+        "action": "STEP_UP_AUTH",
         "route": "auto",
-        "reason": "R1: p=0.40 is not decisive; verify before any block"
+        "reason": "R1: p=0.42 is not decisive; verify before any block"
       },
       {
         "action": "CREATE_CASE",
@@ -148,7 +163,7 @@
         "reason": "R3: close the alert as legitimate and note the confirmation"
       }
     ],
-    "what_changed": "Before verification this was uncertain at 0.40 on a single new-device signal against a card with prior ATO history; the customer's confirmation of the purchase from a new phone moved it to legitimate at 0.12 under R3."
+    "what_changed": "The step-up authentication succeeded and the cardholder affirmatively confirmed the $100.07 purchase on their own iOS device, converting the sole anomaly (New device flag) into an explained one and moving the assessment from uncertain 0.42 to legitimate 0.08."
   },
   "sar": {
     "file": false,
@@ -158,8 +173,8 @@
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "A verification response settled the question: the cardholder confirmed the only transaction in the episode, and the remaining signals (home region, below-average amount, no rare shared device) are all benign, so further investigation would not change the decision.",
-  "tool_calls": 9,
-  "tokens": 13962,
-  "latency_s": 49.1
+  "stop_reason": "Decisive: p=0.08 with 4 independent signals and evidence confidence 0.85 (policy \u00a76). A verification response settled the question: step-up auth passed and the cardholder confirmed the transaction. Probability is at or below 0.15 with multiple independent supporting signals (home region, below-mean amount, single non-burst transaction, prior cleared analogues), so further investigation cannot change the decision.",
+  "tool_calls": 10,
+  "tokens": 31079,
+  "latency_s": 89.8
 }

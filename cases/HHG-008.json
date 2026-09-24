@@ -1,28 +1,87 @@
 {
   "case_id": "HHG-008",
   "case": {
-    "status": "closed_legitimate",
-    "verdict": "legitimate",
-    "fraud_probability": 0.17,
-    "pattern": "none",
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.82,
+    "pattern": "card_not_present_fraud",
     "pattern_description": "",
-    "affected_txn_ids": [],
-    "first_suspicious_txn_id": "",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
-    "exposure_usd": 0,
+    "affected_txn_ids": [
+      "3554288",
+      "3554683",
+      "3557979",
+      "3557987",
+      "3558054"
+    ],
+    "first_suspicious_txn_id": "3554288",
+    "connected_card_ids": [
+      "C11923-K2",
+      "C05031-K2",
+      "C11509-K2",
+      "C04597-K2",
+      "C07562-K2",
+      "C06744-K2",
+      "C09657-K2",
+      "C06663-K2",
+      "C11597-K2"
+    ],
+    "connected_device_profiles": [
+      "SM-J700M Build/MMB29K | unknown | chrome 66.0 for android | unknown",
+      "ALE-L23 Build/HuaweiALE-L23 | unknown | chrome 65.0 for android | unknown"
+    ],
+    "exposure_usd": 331.1,
     "evidence": [
       {
-        "claim": "Flagged txn 3558054 is $55.68 against a 180-day mean of $54.02 (amount_z 0.03, 1.03x mean, card max $407.32) \u2014 no amount anomaly.",
+        "claim": "Cardholder C13171 denies the three 19 December charges ($55.60, $55.69, $55.68), the 18 December purchases of $85.57 and $78.56, and the repeat same-amount charges since July, and requests block and reissue.",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": [
+          "C13171",
+          "C13171-K2",
+          "3557979",
+          "3557987",
+          "3558054",
+          "3554683",
+          "3554288"
+        ]
+      },
+      {
+        "claim": "Three transactions of $55.60, $55.69 and $55.68 posted within 21 minutes (21:48:32, 21:50:54, 22:08:56 on 2016-12-19) from three sessions of 'unknown | unknown | chrome 66.0 | unknown', one flagged New; amounts sit at 1.03x the card mean of $54.02, which is why model scores stayed low (0.44, 0.09, 0.38).",
         "source": "graph",
         "ref": "query:card_activity",
         "entity_ids": [
+          "3557979",
+          "3557987",
           "3558054",
           "C13171-K2"
         ]
       },
       {
-        "claim": "Card baseline is 899 transactions in 180 days, 898 online / product C (99.9% share); the flagged txn is online product C, exactly in profile.",
+        "claim": "Card C13171-K2 already has three confirmed card-not-present fraud cases for this same cardholder (CC-3566 $88.07 on 2016-09-15, CC-3422 $124.24 on 2016-09-13, CC-0056 $40.21 on 2016-07-03), each closed with CREATE_CASE|BLOCK_CARD.",
+        "source": "graph",
+        "ref": "query:similar_cases",
+        "entity_ids": [
+          "C13171-K2",
+          "CC-3566",
+          "CC-3422",
+          "CC-0056"
+        ]
+      },
+      {
+        "claim": "Episode transactions 3554683 and 3550100 were made from rare device profiles (SM-J700M Build/MMB29K: 24 cards all-time / 14 in window; ALE-L23 Build/HuaweiALE-L23: 18 / 6) that also appear on C11509-K2, C04597-K2, C07562-K2 and C06744-K2, cards carrying 10-20 confirmed CNP fraud cases each.",
+        "source": "graph",
+        "ref": "query:shared_devices",
+        "entity_ids": [
+          "3554683",
+          "3550100",
+          "C11509-K2",
+          "C04597-K2",
+          "C07562-K2",
+          "C06744-K2"
+        ]
+      },
+      {
+        "claim": "The repeated ~$55.6 amount occurred 13 times with irregular gaps (17, 12, 0, 9, 10, 0 days) and looks_monthly = false, so it does not meet the R7 recurring-legitimate-charge test.",
         "source": "graph",
         "ref": "query:card_profile",
         "entity_ids": [
@@ -30,86 +89,28 @@
         ]
       },
       {
-        "claim": "Flagged device 'unknown | unknown | chrome 66.0 | unknown' is already in the card's history (device_in_card_history true, device_new_flag 'Found', no proxy); the card has 177 devices all-time so device variety is baseline.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3558054",
-          "C13171-K2"
-        ]
-      },
-      {
-        "claim": "13 prior transactions at the same amount across six distinct months (2016-07 to 2016-12), including 3557979 ($55.60) and 3557987 ($55.69) within 20 minutes of the flagged charge \u2014 a repeating same-amount pattern on this card.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "3557979",
-          "3557987",
-          "3558054"
-        ]
-      },
-      {
-        "claim": "No card-testing run and no just-under-$500 run in the 19-transaction window; no new region, no in-person activity, model score only 0.38.",
-        "source": "graph",
-        "ref": "query:card_activity",
-        "entity_ids": [
-          "C13171-K2",
-          "3558054"
-        ]
-      },
-      {
-        "claim": "Three prior confirmed frauds on this same card (CC-1715 $553.72, CC-3566 $88.07, CC-3422 $124.24) all involved new devices or out-of-profile online merchants \u2014 context that raises suspicion but does not match this in-profile charge.",
-        "source": "graph",
-        "ref": "query:similar_cases",
-        "entity_ids": [
-          "CC-1715",
-          "CC-3566",
-          "CC-3422",
-          "C13171-K2"
-        ]
-      },
-      {
-        "claim": "The rare-device list contains no device unique to this episode: the flagged device string is a generic browser profile, and the high-fraud linked cards (e.g. C11923-K2, C04597-K2) share only portfolio-wide common strings, so no shared-origin link is supportable.",
-        "source": "graph",
-        "ref": "query:shared_devices",
-        "entity_ids": [
-          "C11923-K2",
-          "C04597-K2",
-          "C13171-K2"
-        ]
-      },
-      {
-        "claim": "Policy R7 directs CREATE_CASE, VERIFY_WITH_CUSTOMER and WARN_CUSTOMER \u2014 not a block \u2014 when a disputed charge matches the cardholder's own recurring pattern.",
+        "claim": "Policy R2: when the customer denies the transaction, recommend BLOCK_CARD and CREATE_CASE, plus FILE_REPORT where the case connects to a shared device profile or another card's fraud.",
         "source": "document",
-        "ref": "policy:R7",
+        "ref": "policy:R2",
         "entity_ids": []
-      },
-      {
-        "claim": "Customer confirms the $55.68 charge as their own recurring online purchase after being shown the prior same-amount history.",
-        "source": "customer",
-        "ref": "evidence_request:1",
-        "entity_ids": [
-          "3558054",
-          "C13171"
-        ]
       }
     ],
     "similar_prior_cases": [
-      "CC-1715",
       "CC-3566",
       "CC-3422",
-      "CC-4027",
-      "CC-0893"
+      "CC-0056",
+      "CC-1195",
+      "CC-5339"
     ],
-    "summary": "Customer C13171 disputes a $55.68 online charge (3558054) on card C13171-K2. Everything measurable about the charge is in-profile: 1.03x the card's mean, online product C like 99.9% of 899 baseline transactions, on a device already seen on the account with no proxy, scored 0.38. The card has 13 prior charges at this same amount across six months, including two within 20 minutes of the disputed one, so this looks like the cardholder's own repeating purchase rather than a fraud burst. The customer has genuine prior fraud history on this card (CC-1715, CC-3566, CC-3422), but those episodes were driven by unseen devices and out-of-profile amounts, which is not the case here. Under R7 this warrants a case plus customer verification and a warning, not a block; the expected reply is that the customer recognises the recurring merchant.",
+    "summary": "Cardholder C13171 disputed a $55.68 online charge (3558054) on card C13171-K2 and, on validation, denied the whole cluster: three near-identical charges within 21 minutes on 19 December, two larger online purchases on 18 December, and the repeated same-amount charges since July. The card is a very high-volume online card (899 txns/180d, 177 devices), which is exactly why individually the amounts scored low - the abuse is hidden inside the noise. Three prior confirmed card-not-present fraud cases exist on this same card, and two episode transactions used rare device profiles (SM-J700M Build/MMB29K, ALE-L23) shared with cards carrying dozens of confirmed CNP fraud cases. The repeated amount is not a legitimate recurring charge: gaps are irregular and the cardholder denies any subscription. Recommend blocking and reissuing the card, opening a case, filing a report given the shared-device linkage, and monitoring the connected cards.",
     "written_to_graph": true,
     "graph_case_id": "AC-HHG-008"
   },
   "evidence_requests": [
     {
       "type": "customer_validation",
-      "asked_after_step": 4,
-      "assumed_response": "Customer, shown the list of 13 prior same-amount charges over six months including 3557979 and 3557987 minutes earlier, recognises the merchant as their own repeating online purchase and confirms the $55.68 charge was theirs."
+      "asked_after_step": 5,
+      "assumed_response": "The cardholder states they have no subscription or top-up at that amount and did not authorise any of the three charges on 19 December ($55.60, $55.69 or $55.68), nor the repeat charges of the same amount since July. They also deny the online purchases of 18 December for $85.57 and $78.56 and ask that the card be blocked and reissued."
     }
   ],
   "next_best_actions": {
@@ -132,33 +133,56 @@
     ],
     "final": [
       {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denies the transaction; exposure $331.10 <= $2,500 -> L1"
+      },
+      {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R7/\u00a73a: disputed charge; case records the dispute"
+        "reason": "R2/\u00a73a: open the fraud case and write it to the graph"
       },
       {
-        "action": "WARN_CUSTOMER",
-        "route": "auto",
-        "reason": "R7: recurring-charge reminder; do not block"
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "\u00a73a/R2/R6/R9: report conditions met (see sar.reason)"
       },
       {
-        "action": "CLOSE_NO_FRAUD",
+        "action": "MONITOR_CONNECTED_CARDS",
         "route": "auto",
-        "reason": "R3: customer recognises the recurring charge"
+        "reason": "R6: monitor 9 card(s) sharing Rare device profile 'SM-J700M Build/MMB29K | unknown | chrome 66.0 for android | unknown' (24 cards all-time, 14 in this window), also present on C11509-K2, C04597-K2, C05031-K2, C09657-K2, C06663-K2, C11597-K2 and C11923-K2, all of which carry multiple confirmed card-not-present fraud cases."
       }
     ],
-    "what_changed": "Verification turned an uncertain, dispute-driven case into a legitimate one: the assumed customer confirmation aligns with the 13 prior same-amount charges and moved fraud probability from 0.33 to 0.17."
+    "what_changed": "The customer_validation reply came back as a denial covering not just the flagged $55.68 charge but the entire 18-19 December cluster and the historical same-amount repeats, which removed the recurring-charge explanation and moved the assessment from uncertain (0.55) to fraud (0.82)."
   },
   "sar": {
-    "file": false,
-    "reason": "No report: activity assessed as legitimate (R3); \u00a73a filing conditions do not apply.",
-    "narrative": "",
-    "subjects": [],
-    "total_amount_usd": 0,
-    "activity_dates": []
+    "file": true,
+    "reason": "File: activity connects to a shared origin / other customers' fraud (Rare device profile 'SM-J700M Build/MMB29K | unknown | chrome 66.0 for android | unknown' (24 cards all-time, 14 in this window), also present on C11509-K2, C04597-K2, C05031-K2, C09657-K2, C06663-K2, C11597-K2 and C11923-K2, all of which carry multiple confirmed card-not-present fraud cases.) (\u00a73a, R6).",
+    "narrative": "This report documents suspected card-not-present (CNP) payment card fraud on card C13171-K2, issued to cardholder C13171, involving five unauthorized online transactions totaling $331.10 between 18 and 19 December 2016. On 18 December 2016, two online purchases were posted at 16:52:43 (transaction 3554288, $85.57) and 18:41:53 (transaction 3554683, $78.56). On 19 December 2016, three near-identical charges posted within 21 minutes through three separate online sessions: 21:48:32 (transaction 3557979, $55.60), 21:50:54 (transaction 3557987, $55.69) and 22:08:56 (transaction 3558054, $55.68); all three sessions presented the device string 'unknown | unknown | chrome 66.0 | unknown', one of which was flagged as New. The charge amounts sat at approximately 1.03 times the card's mean transaction value of $54.02 and therefore returned low model scores (0.44, 0.09 and 0.38), allowing the activity to blend into a very high-volume online card profile of 899 transactions and 177 devices over 180 days. Upon customer validation, the cardholder denied authorizing any of the three 19 December charges, the two 18 December purchases, and the repeated same-amount charges recorded since July, stated they hold no subscription or top-up at that amount, and requested that the card be blocked and reissued. Graph review shows the approximately $55.60 amount recurred 13 times with irregular gaps of 17, 12, 0, 9, 10 and 0 days and a looks_monthly value of false, so it does not qualify as a legitimate recurring charge. Card C13171-K2 already carries three confirmed CNP fraud cases for this same cardholder (CC-3566, $88.07 on 15 September 2016; CC-3422, $124.24 on 13 September 2016; and CC-0056, $40.21 on 3 July 2016), each closed with case creation and a card block. Transactions 3554683 and 3550100 originated from two rare device profiles, 'SM-J700M Build/MMB29K | unknown | chrome 66.0 for android | unknown' (24 cards all-time, 14 in the review window) and 'ALE-L23 Build/HuaweiALE-L23 | unknown | chrome 65.0 for android | unknown' (18 cards all-time, 6 in window), which also appear on cards C11509-K2, C04597-K2, C07562-K2 and C06744-K2, each carrying 10 to 20 confirmed CNP fraud cases. The activity is reported as suspicious because the cardholder denies the transactions, the amounts were deliberately kept close to the card's typical spend and split into rapid repeat charges consistent with amount-splitting to evade detection, and the sessions link to rare device profiles shared across multiple cards with established CNP fraud. The bank blocked and reissued card C13171-K2, opened a fraud case, filed this report on the basis of the shared-device linkage, and placed nine connected cards under monitoring: C11923-K2, C05031-K2, C11509-K2, C04597-K2, C07562-K2, C06744-K2, C09657-K2, C06663-K2 and C11597-K2.",
+    "subjects": [
+      "C13171",
+      "C13171-K2",
+      "C11923-K2",
+      "C05031-K2",
+      "C11509-K2",
+      "C04597-K2",
+      "C07562-K2",
+      "C06744-K2",
+      "C09657-K2",
+      "C06663-K2",
+      "C11597-K2",
+      "SM-J700M Build/MMB29K | unknown | chrome 66.0 for android | unknown",
+      "ALE-L23 Build/HuaweiALE-L23 | unknown | chrome 65.0 for android | unknown",
+      "unknown | unknown | chrome 66.0 | unknown"
+    ],
+    "total_amount_usd": 331.1,
+    "activity_dates": [
+      "2016-12-18",
+      "2016-12-19"
+    ]
   },
-  "stop_reason": "Customer confirmation plus the in-profile amount/channel/device and the documented same-amount history settle the question; no further graph step would change the decision, and no block is warranted under R7.",
-  "tool_calls": 9,
-  "tokens": 33869,
-  "latency_s": 77.0
+  "stop_reason": "Verification settled the question: customer_validation -> denies (policy \u00a76). The verification response settles the question: the cardholder denies the disputed and related charges, and this is corroborated by prior confirmed fraud on the same card and rare-device links. Further requests would not change the decision.",
+  "tool_calls": 11,
+  "tokens": 93783,
+  "latency_s": 162.8
 }

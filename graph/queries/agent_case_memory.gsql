@@ -1,0 +1,19 @@
+USE GRAPH {GRAPH}
+CREATE OR REPLACE QUERY agent_case_memory(VERTEX<Card> card, DATETIME as_of, DATETIME device_since, INT max_device_cards = 60) FOR GRAPH {GRAPH} {
+  // The agent's own earlier investigations (AgentCase write-backs), opened strictly before as_of:
+  // on the same customer's cards, naming one of them as connected, or sharing a rare device profile.
+  SetAccum<STRING> @why;
+  SetAccum<STRING> @cards;
+  S = {card};
+  owner = SELECT o FROM S:c -(OWNED_BY>)- Customer:o;
+  mine = SELECT k FROM owner:o -(OWNS>)- Card:k;
+  A1 = SELECT a FROM mine:k -(CARD_AGENT_CASE>)- AgentCase:a WHERE a.opened_at < as_of ACCUM a.@why += "same_customer";
+  A2 = SELECT a FROM mine:k -(CONNECTED_AGENT_CASE>)- AgentCase:a WHERE a.opened_at < as_of ACCUM a.@why += "connected_card";
+  T = SELECT t FROM S:c -(MADE>)- Transaction:t WHERE t.ts >= device_since AND t.ts <= as_of;
+  D = SELECT d FROM T:t -(FROM_DEVICE>)- DeviceProfile:d;
+  X = SELECT t FROM D:d -(DEVICE_OF>)- Transaction:t ACCUM d.@cards += t.card_id;
+  D = SELECT d FROM D:d WHERE d.@cards.size() <= max_device_cards;
+  A3 = SELECT a FROM D:d -(DEVICE_AGENT_CASE>)- AgentCase:a WHERE a.opened_at < as_of ACCUM a.@why += "shared_device";
+  A = A1 UNION A2 UNION A3;
+  PRINT A[A.case_id, A.card_id, A.opened_at, A.verdict, A.fraud_probability, A.pattern, A.status, A.summary, A.@why AS why] AS cases;
+}
